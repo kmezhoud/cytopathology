@@ -1,0 +1,293 @@
+---
+title: imager for cytopathology"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+L'ojectif est de savoir si avec ceratines fonction de `imager`, est possible de compter les cellules 
+```{r include=FALSE}
+library(imager)
+```
+
+
+```{r echo=TRUE}
+# load image
+papSmear <- load.image('papSmear.jpg')
+papSmear
+par(mfrow=c(1,2))
+plot(papSmear)
+plot(grayscale(papSmear))
+```
+Depth = 1 means the object is a static image and not video. <br />
+Clour channels = 3 means the image content Red, Green, Blue colours.
+
+```{r}
+layout(t(1:2))
+hist(papSmear)
+hist(grayscale(papSmear))
+```
+
+```hist``` function uses the values of the 3 channels rgb as a vector values. We can plot separately histograms by color
+
+```{r}
+# for red
+G(papSmear) %>% hist(main="Green channels values")
+```
+
+If we convert the image object's to dataframe, we can view the value of each pixel.
+
+```{r}
+layout(t(1:2))
+head(as.data.frame(papSmear))
+tail(as.data.frame(papSmear))
+```
+
+
+```{r}
+library(ggplot2)
+papSeam_df <- as.data.frame(papSmear)
+pap <- plyr::mutate(papSeam_df,channel=factor(cc,labels=c('R','G','B')))
+ggplot(pap,aes(value,col=channel)) + geom_histogram(bins=30) + facet_wrap(~ channel)
+```
+
+
+
+```{r echo=TRUE}
+
+papSmearg <- grayscale(papSmear)
+f <- ecdf(papSmearg)
+plot(f, main="Empirical CDF of luminance values (gray)")
+
+```
+
+
+```{r echo=TRUE}
+
+gr <- imgradient(papSmear,"xy")
+grG <- imgradient(grayscale(papSmear), "xy")
+
+plot(gr, layout="row")
+plot(grG, layout="row")
+```
+
+
+
+```{r echo=TRUE}
+layout(t(1:2))
+dx <- imgradient(papSmear,"x")
+dy <- imgradient(papSmear,"y")
+grad.mag <- sqrt(dx^2+dy^2)
+plot(grad.mag,main="Gradient magnitude with color")
+
+papSmear.G <- grayscale(papSmear)
+dx.G <- imgradient(papSmear.G,"x")
+dy.G <- imgradient(papSmear.G,"y")
+grad.mag.G <- sqrt(dx.G^2+dy.G^2)
+plot(grad.mag.G ,main="Gradient magnitude with gray")
+```
+
+```{r echo=TRUE}
+l <- imgradient(papSmear,"x")
+head(as.data.frame(l))
+dim(l)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(imhessian(papSmear)[2])
+plot(with(imhessian(papSmear),(xx*yy - xy^2)), main="Determinant of Hessian")
+```
+
+```{r}
+layout(t(1:2))
+threshold(papSmear,"99%") %>% plot(main="Determinant: 1% highest values (raw) ")
+threshold(with(imhessian(papSmear),(xx*yy - xy^2)),"99%") %>% plot(main="Determinant: 1% highest values")
+
+```
+```{r}
+threshold(grad.mag, "99%") %>% plot(main="Determinant: 1% highest values (gradient)")
+```
+
+
+
+```{r echo=TRUE}
+lab1 <- threshold(grad.mag, "99%") %>% label
+lab2 <- threshold(with(imhessian(papSmear),(xx*yy - xy^2)), "99%") %>% label
+par(mfrow=c(1,2))
+plot(lab1, main= "Labelled regions from gradient")
+plot(lab2, main= "Labelled regions from scare")
+
+```
+
+```{r}
+class(lab1)
+lab1
+```
+
+```{r}
+df1 <- as.data.frame(lab1) %>% subset(value>0)
+df2 <- as.data.frame(lab2) %>% subset(value>0)
+head(df2,3)
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+centers1 <- dplyr::group_by(df1,value) %>% dplyr::summarise(mx=mean(x),my=mean(y))
+plot(lab1)
+with(centers1, points(mx, my, col="yellow"))
+
+centers2 <- dplyr::group_by(df2,value) %>% dplyr::summarise(mx=mean(x),my=mean(y))
+plot(lab2)
+with(centers2, points(mx, my, col="red"))
+```
+
+
+```{r}
+get.centers <- function(im,thr="99%")
+{   im <- isoblur(im,5)
+    dt <- imhessian(im) %$% { xx*yy - xy^2 } %>% threshold(thr) %>% label
+    as.data.frame(dt) %>% subset(value>0) %>% dplyr::group_by(value) %>% dplyr::summarise(mx=mean(x),my=mean(y))
+}
+par(mfrow=c(1,2))
+plot(lab1, main ="")
+get.centers(lab1,"50%") %$% points(mx,my,col="yellow")
+plot(grad.mag,main="Gradient magnitude with color")
+```
+
+## Conclusion
+Cette méthode ne permet pas de compter les cellules.
+
+## Faire des essays avec Pixsets
+
+```{r}
+im <- load.image("papSmear.jpg")
+im <- grayscale(im)
+px <- im > .6
+par(mfrow=c(1,2))
+plot(im, main = "raw image")
+plot(px, main = ">0.6 intensity")
+dim(px)
+dim(im)
+mean(px)
+mean(im)
+mean(im[px])
+```
+
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(im , main = "im")
+#highlight(im)
+px <- isoblur(im, 1)  > .6
+plot(px, main ="px")
+highlight(px)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(im)
+px.flood(im,278,300,sigma=.31) %>% highlight
+sp <- split_connected(px)
+plot(sp[1:4])
+```
+
+
+
+```{r}
+par(mfrow=c(1,2))
+boundary(px) %>% plot(main = "px <- isoblur(im, 1)  > .6")
+boundary(im) %>% plot( main= "im")
+```
+
+
+```{r}
+par(mfrow=c(1,2))
+plot(im, main= "im with boundary")
+boundary(px) %>% where %$% { points(x,y,cex=.1,col="red") }
+plot(im, main="im with highlight(px)")
+highlight(px)
+```
+
+
+
+```{r}
+################
+#par(mfrow=c(1,2))
+plot(im, main="with shink")
+highlight(px)
+#Shrink by 5 pixels
+shrink(px,5) %>% highlight(col="blue")
+#Grow by 5 pixels
+grow(px,5) %>% highlight(col="green")
+#Compute bounding box
+bbox(px) %>% highlight(col="yellow")
+```
+
+
+```{r}
+px.none(im) #No pixels
+px.all(im) #All of them
+```
+
+```{r}
+plot(im)
+#Image borders at depth 10
+px.borders(im,10) %>% highlight
+#Left-hand border (5 pixels), see also px.top, px.bottom, etc.
+px.left(im,5) %>% highlight(col="green")
+```
+
+
+
+```{r}
+#Split pixset in two along x
+imsplit(im,"x",2) %>% plot(layout="row")
+```
+
+
+```{r}
+plot(im > .6)
+```
+
+```{r}
+# Splitting by color
+imc <- load.image("papSmear.jpg")
+imsplit(imc,"c") %>% plot
+```
+
+```{r}
+plot(imc)
+imsplit(imc > 0.75,"c") %>% parany %>% highlight
+```
+
+```{r}
+threshold(imc) %>% plot
+```
+
+```{r}
+library(dplyr)
+d <- as.data.frame(im)
+##Subsamble, fit a linear model
+m <- sample_n(d,1e4) %>% lm(value ~ x*y,data=.)
+##Correct by removing the trend
+im.c <- im-predict(m,d)
+out <- threshold(im.c)
+plot(out)
+
+out <- clean(out,3) %>% imager::fill(7)
+plot(im)
+highlight(out)
+```
+
+```{r}
+bg <- (!threshold(im.c,"10%"))
+fg <- (threshold(im.c,"90%"))
+imlist(fg,bg) %>% plot(layout="row")
+```
+
