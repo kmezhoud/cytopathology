@@ -1,16 +1,20 @@
 ---
-title: "EBImage"
+title: "EBImage for cytopathology"
 output:
   html_document:
     df_print: paged
 ---
 
+---
+title: "EBImage for cytopathology"
+output:
+  html_document:
 
 
 ```{r}
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("EBImage")
-# library("EBImage")
+ library("EBImage")
 im.c <- readImage("papSmear.jpg")
 par(mfrow=c(1,2))
 plot(im.c)
@@ -22,20 +26,78 @@ display(im.c, method = "raster") # raster method means within R
  
 ```{r}
 head(im.c)
-im.c2 <- im.c * 1.5
+im.c.g <- channel(im.c, "gray")
+im.c2.g <- im.c.g * 1.3
 par(mfrow=c(1,2))
 plot(im.c)
-plot(im.c2)
+plot(im.c2.g)
 
 ```
  
 
 ```{r}
 # gaussian blur
-im.c <- gblur(im.c, sigma= 5)
-im.c2 <- gblur(im.c2, sigma = 5)
+im.c.blur <- gblur(im.c, sigma= 5)
+im.c2.g.blur <- gblur(im.c2.g, sigma = 5)
 par(mfrow=c(1,2))
-plot(im.c)
-plot(im.c2)
+plot(im.c.blur)
+plot(im.c2.g.blur)
+```
+
+
+
+# threshold using Otsu's method used to reduce of graylevel image to a binary image.
+```{r}
+# only gray images are accepted
+#im.c2.g <- channel(im.c2, "gray")
+par(mfrow=c(1,2))
+plot(im.c2.g.blur > 0.9)
+plot(im.c2.g > 0.9)
+# gives a threshold value using Otsu algorithm
+#EBImage::otsu(im.c2.g.blur)
+
+
+#im.c2.g.blur.otsu <- im.c2.g.blur > otsu(im.c2.g.blur)
+
+```
+
+```{r echo=TRUE, message=TRUE, warning=TRUE, paged.print=TRUE}
+nuc = readImage(system.file("images", "nuclei.tif", package="EBImage"))
+nuc_gblur = gblur(nuc, sigma = 5)
+#display(nuc_gblur, method = "raster", all = TRUE)
+threshold = otsu(nuc)
+threshold_gblur <- otsu(nuc_gblur) 
+threshold
+threshold_gblur
+#display(nuc_gblur > threshold, all =FALSE)
+par(mfrow=c(1,2))
+display(nuc > threshold, method = "raster", all = TRUE)
+display(nuc_gblur > threshold, method = "raster", all = TRUE)
+
+max(bwlabel(nuc > threshold))
+max(bwlabel(nuc_gblur > threshold_gblur))
+
+display(colorLabels(nuc > threshold), method = "raster", all = TRUE)
+display(colorLabels(nuc_gblur > threshold_gblur), method = "raster", all = TRUE)
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+bwlabel(im.c2.g.blur > 0.9)
+N <- max(bwlabel(im.c2.g.blur > 0.9))
+```
+
+
+```{r}
+display(colorLabels(bwlabel(im.c2.g.blur > 0.9)), method= "raster") 
 ```
 

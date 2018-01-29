@@ -1,5 +1,5 @@
 ---
-title: imager for cytopathology"
+title: imager for cytopathology
 output:
   html_document:
     df_print: paged
