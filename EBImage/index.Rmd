@@ -10,22 +10,15 @@ output:
 - Black background: inverse black/white
 - gblur filtering step reduces the count of the cells
 
-```{r}
-library("imager")
-im <- load.image("papSmear_g.jpg")
-dx <- imager::imgradient(im,"x")
-dy <- imager::imgradient(im,"y")
-grad.mag <- sqrt(dx^2+dy^2)
-plot(grad.mag)
-```
 
-
-
-
-```{r}
+```{r include=FALSE}
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("EBImage")
  library("EBImage")
+```
+
+
+```{r}
 im <- readImage("papSmear_bg.jpg")
 par(mfrow=c(1,2))
 plot(im)
@@ -112,9 +105,14 @@ getCelLab <- function(img, bright, sigma ){
 im <- readImage("papSmear_bg.jpg")
 im2 <- im * bright
 im.blur <- gblur(im, sigma)
+## filtering option 
 
 im.blur.thr.cnt <- bwlabel(im.blur > otsu(im.blur))
-im.blur.thr.cnt <- bwlabel(im.blur > otsu(im.blur))
+#im.blur.the.cnt <- bwlabel(watershed( distmap(im.blur), 2 ))
+#im.blur.thr.cnt <- bwlabel(adaptative_thre(31, "disc"))
+#im.blur.thr.cnt <- propagate(seeds = im.blur, x = im.blur, lambda = 100)
+
+
 N <- max(im.blur.thr.cnt)
 display(colorLabels(im.blur.thr.cnt), method= "raster") 
 return(N)
@@ -126,15 +124,53 @@ getCelLab("papSmear_bg.jpg", 2, 0.1)
 ```
 
 ```{r}
-adaptative_thre <- function(){
-disc = makeBrush(31, "disc")
+adaptative_thre <- function(size, shape){
+disc = makeBrush(size, shape)
+#disc <- fillHull(disc)
 disc = disc / sum(disc)
 offset = 0.05
 im.blur_bg = filter2( im.blur, disc )
 im.blur_th = im.blur > im.blur_bg + offset
-plot(im.blur_th)
+return(im.blur_th)
 }
-plot(im.blur > otsu(im.blur))
+plot(adaptative_thre(31, "disc"))
+plot(adaptative_thre(9, "disc"))
 
+
+```
+
+
+# getCelLab with adaptative_thre
+```{r}
+getCelLab <- function(img, bright, sigma ){
+
+im <- readImage("papSmear_bg.jpg")
+im2 <- im * bright
+im.blur <- gblur(im, sigma)
+#im.blur.thr.cnt <- bwlabel(im.blur > otsu(im.blur))
+im.blur.thr.cnt <- bwlabel(adaptative_thre(31, "disc"))
+N <- max(im.blur.thr.cnt)
+display(colorLabels(im.blur.thr.cnt), method= "raster") 
+return(N)
+}
+#par(mfrow=c(2,2))
+getCelLab("papSmear.jpg", 2, 5)
+getCelLab("papSmear_g.jpg", 2, 2)
+getCelLab("papSmear_bg.jpg", 2, 0.1)
+```
+
+
+# get graded magnetude image 
+```{r include=FALSE}
+library("imager")
+```
+
+
+```{r}
+im <- load.image("papSmear_g.jpg")
+dx <- imager::imgradient(im,"x")
+dy <- imager::imgradient(im,"y")
+grad.mag <- sqrt(dx^2+dy^2)
+plot(grad.mag)
 ```
 
