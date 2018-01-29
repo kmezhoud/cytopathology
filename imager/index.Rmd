@@ -9,6 +9,10 @@ output:
 ---
 
 L'ojectif est de savoir si avec ceratines fonction de `imager`, est possible de compter les cellules 
+
+# Conclusion
+- imager tools can not count the cells
+
 ```{r include=FALSE}
 library(imager)
 ```
