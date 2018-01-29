@@ -15,33 +15,33 @@ output:
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("EBImage")
  library("EBImage")
-im.c <- readImage("papSmear.jpg")
+im <- readImage("papSmear_bg.jpg")
 par(mfrow=c(1,2))
-plot(im.c)
-display(im.c, method = "raster") # raster method means within R
+plot(im)
+display(im, method = "raster") # raster method means within R
 ```
 
 
  make the image brighter by mutiplying all the values by 2
  
 ```{r}
-head(im.c)
-im.c.g <- channel(im.c, "gray")
-im.c2.g <- im.c.g * 1.3
+# convert image de gray scale
+# im <- channel(im.c, "gray")
+im2 <- im * 2
 par(mfrow=c(1,2))
-plot(im.c)
-plot(im.c2.g)
+plot(im)
+plot(im2)
 
 ```
  
 
 ```{r}
 # gaussian blur
-im.c.blur <- gblur(im.c, sigma= 5)
-im.c2.g.blur <- gblur(im.c2.g, sigma = 5)
+im.blur <- gblur(im, sigma= 0.01)
+im2.blur <- gblur(im2, sigma = 1)
 par(mfrow=c(1,2))
-plot(im.c.blur)
-plot(im.c2.g.blur)
+plot(im.blur)
+plot(im2.blur)
 ```
 
 
@@ -49,13 +49,9 @@ plot(im.c2.g.blur)
 # threshold using Otsu's method used to reduce of graylevel image to a binary image.
 ```{r}
 # only gray images are accepted
-#im.c2.g <- channel(im.c2, "gray")
-par(mfrow=c(1,2))
-plot(im.c2.g.blur > 0.9)
-plot(im.c2.g > 0.9)
 # gives a threshold value using Otsu algorithm
-#EBImage::otsu(im.c2.g.blur)
-
+otsu(im.blur)
+#otsu(im2.blur)
 
 #im.c2.g.blur.otsu <- im.c2.g.blur > otsu(im.c2.g.blur)
 
@@ -77,8 +73,8 @@ display(nuc_gblur > threshold, method = "raster", all = TRUE)
 max(bwlabel(nuc > threshold))
 max(bwlabel(nuc_gblur > threshold_gblur))
 
-display(colorLabels(nuc > threshold), method = "raster", all = TRUE)
-display(colorLabels(nuc_gblur > threshold_gblur), method = "raster", all = TRUE)
+display(colorLabels(bwlabel(nuc > threshold)), method = "raster", all = TRUE)
+display(colorLabels(bwlabel(nuc_gblur > threshold_gblur)), method = "raster", all = TRUE)
 
 ```
 
@@ -86,18 +82,14 @@ display(colorLabels(nuc_gblur > threshold_gblur), method = "raster", all = TRUE)
 
 
 
-
-
-
-
-
 ```{r}
-bwlabel(im.c2.g.blur > 0.9)
-N <- max(bwlabel(im.c2.g.blur > 0.9))
+im.blur.thr.cnt <- bwlabel(im.blur > otsu(im.blur))
+N <- max(im.blur.thr.cnt)
+N
 ```
 
 
 ```{r}
-display(colorLabels(bwlabel(im.c2.g.blur > 0.9)), method= "raster") 
+display(colorLabels(im.blur.thr.cnt), method= "raster") 
 ```
 
