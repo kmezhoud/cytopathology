@@ -1,0 +1,41 @@
+---
+title: "EBImage"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+```{r}
+#source("http://bioconductor.org/biocLite.R")
+#biocLite("EBImage")
+# library("EBImage")
+im.c <- readImage("papSmear.jpg")
+par(mfrow=c(1,2))
+plot(im.c)
+display(im.c, method = "raster") # raster method means within R
+```
+
+
+ make the image brighter by mutiplying all the values by 2
+ 
+```{r}
+head(im.c)
+im.c2 <- im.c * 1.5
+par(mfrow=c(1,2))
+plot(im.c)
+plot(im.c2)
+
+```
+ 
+
+```{r}
+# gaussian blur
+im.c <- gblur(im.c, sigma= 5)
+im.c2 <- gblur(im.c2, sigma = 5)
+par(mfrow=c(1,2))
+plot(im.c)
+plot(im.c2)
+```
+
