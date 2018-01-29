@@ -6,9 +6,12 @@ output:
 ---
 
 # Conclusion
-- Gray scale image
-- Black background: inverse black/white
-- gblur filtering step reduces the count of the cells
+## steps
+- blur the image 
+- apply a threshold to turn cell into 'blobs'
+- count the 'blobs'
+## comments
+- watershed function can not resolve two linked cells.
 
 
 ```{r include=FALSE}
