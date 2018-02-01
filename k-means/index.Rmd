@@ -16,7 +16,7 @@ library("EBImage")
 
 
 ```{r}
-im <- readImage("papSmear.jpg")
+im <- readImage("basales.jpg")
 dim(im)
 plot(im) # raster method means within R
 ```
@@ -37,15 +37,18 @@ str(df)
 
 ```{r}
 ### compute the k-means clustering
+set.seed(1234)
 K = kmeans(df,5)
 str(K)
-head(K$centers)
+dim(K$centers)
 ```
 ```{r}
 df$label = K$cluster
+dim(df)
 head(df)
 ```
 
+## compute thresholds of intensities of each color (R,G,B) for each category
 ```{r}
 ### Replace the color of each pixel in the image with the mean 
 ### R,G, and B values of the cluster in which the pixel resides:
@@ -68,13 +71,35 @@ colors
 
 # merge color codes on to df
 # IMPORTANT: we must maintain the original order of the df after the merge!
-df$order = 1:nrow(df)
-df = merge(df, colors)
-df = df[order(df$order),]
+
+df$order <- 1:nrow(df)
+df <- merge(df, colors)
+## split image into two dataframe df.x contain 1 label, df.y contain the remain labels
+
+df.x <- df[df$label == 1,]
+df.y <- df[!df$label == 1,]
+## replace value in df.y  to 255 (white)
+df.y[,c('red','green', 'blue', 'R', 'G', 'B')] <- 255
+
+df <- rbind(df.x, df.y)
+# reorder the matrix (image)
+df <- df[order(df$order),]
 df$order = NULL
 
 head(df)
+dim(df)
 ```
+
+
+```{r}
+## attribute white color to class 5, 4, 3, 2
+# df[df$label == 5, -1] <- 255
+# df[df$label == 4, -1] <- 255
+# df[df$label == 3, -1] <- 255
+# df[df$label == 2, -1] <- 255
+```
+
+
 
 ##  Reshape our data frame back into an image
 
@@ -114,7 +139,7 @@ dim(im)
 
 ```{r}
 
-get_kmean_image <- function(file, k){
+get_kmean_image <- function(file, k, cat){
   im <- readImage(file)
   # reshape image into a data frame
   df = data.frame(
@@ -124,8 +149,11 @@ get_kmean_image <- function(file, k){
   )
   
   ### compute the k-means clustering
+  set.seed(1234)
   K = kmeans(df,k)
   df$label = K$cluster
+  
+  
   
   ### Replace the color of each pixel in the image with the mean 
   ### R,G, and B values of the cluster in which the pixel resides:
@@ -140,11 +168,21 @@ get_kmean_image <- function(file, k){
   
   # merge color codes on to df
   # IMPORTANT: we must maintain the original order of the df after the merge!
-  df$order = 1:nrow(df)
-  df = merge(df, colors)
-  df = df[order(df$order),]
-  df$order = NULL
   
+  df$order <- 1:nrow(df)
+  df <- merge(df, colors)
+  ## split image into two dataframe df.x contain 1 label, df.y contain the remain labels
+  if(cat %in% seq(k)){
+    df.x <- df[df$label == cat,]
+    df.y <- df[!df$label == cat,]
+    ## replace value in df.y  to 255 (white)
+    df.y[,c('red','green', 'blue', 'R', 'G', 'B')] <- 255
+    
+    df <- rbind(df.x, df.y)
+  }
+  # reorder the matrix (image)
+  df <- df[order(df$order),]
+  df$order = NULL
   
   # get mean color channel values for each row of the df.
   R <- matrix(df$R, nrow=dim(im)[1])
@@ -157,7 +195,10 @@ get_kmean_image <- function(file, k){
   im.segmented[,,2] = G
   im.segmented[,,3] = B
   
-  ## convert matrix to Image
+  # convert array to cimg for imager package from dim(x,y,channel) to dim(x, y, 1, channels)
+  # ignore warning message if necessary
+  #suppressWarnings(im.segmented_cimg <- imager::as.cimg(im.segmented))
+  
   im.segmented <- Image(im.segmented, colormode=Color)
   par(mfrow=c(1,2))
   plot(im.segmented, title= "reconstitute image using k-mean clustering")
@@ -168,7 +209,12 @@ get_kmean_image <- function(file, k){
   
 }
 
-get_kmean_image(file = "basales.jpg", k = 6)
+get_kmean_image(file = "basales.jpg", k = 5, cat= 1)
+get_kmean_image(file = "basales.jpg", k = 5, cat= 2)
+get_kmean_image(file = "basales.jpg", k = 5, cat= 3)
+get_kmean_image(file = "basales.jpg", k = 5, cat= 4)
+get_kmean_image(file = "basales.jpg", k = 5, cat= 5)
+#get_kmean_image(file = "basales.jpg", k = 6, cat= 6)
 ```
 
 
@@ -185,120 +231,192 @@ get_kmean_image(file = "basales.jpg", k = 6)
 
 
 ```{r}
-segment_image = function(img, n){
-  # create a flat, segmented image data set using kmeans
-  # Segment an RGB image into n groups based on color values using Kmeans
-  df = data.frame(
-    red = matrix(img[,,1], ncol=1),
-    green = matrix(img[,,2], ncol=1),
-    blue = matrix(img[,,3], ncol=1)
-  )
-  K = kmeans(df,n)
-  df$label = K$cluster
-  
-  # compute rgb values and color codes based on Kmeans centers
-  colors = data.frame(
-    label = 1:nrow(K$centers), 
-    R = K$centers[,"red"],
-    G = K$centers[,"green"],
-    B = K$centers[,"blue"],
-    color=rgb(K$centers)
-  )
-  
-  # merge color codes on to df but maintain the original order of df
-  df$order = 1:nrow(df)
-  df = merge(df, colors)
-  df = df[order(df$order),]
-  df$order = NULL
-  
-  return(df)
-  
-}
-
-#
-# reconstitue the segmented images to RGB matrix
-#
-build_segmented_image = function(df, img){
-  # reconstitue the segmented images to RGB array
-  
-  # get mean color channel values for each row of the df.
-  R = matrix(df$R, nrow=dim(img)[1])
-  G = matrix(df$G, nrow=dim(img)[1])
-  B = matrix(df$B, nrow=dim(img)[1])
-  
-  # reconsitute the segmented image in the same shape as the input image
-  img_segmented = array(dim=dim(img))
-  dim(img_segmented)
-  img_segmented[,,1] = R
-  img_segmented[,,2] = G
-  img_segmented[,,3] = B
-  
-  return(img_segmented)
-}
-
-#
-# 2D projection for visualizing the kmeans clustering
-#
-project2D_from_RGB = function(df){
-  # Compute the projection of the RGB channels into 2D
-  PCA = prcomp(df[,c("red","green","blue")], center=TRUE, scale=TRUE)
-  pc2 = PCA$x[,1:2]
-  df$x = pc2[,1]
-  df$y = pc2[,2]
-  return(df[,c("x","y","label","R","G","B", "color")])
-}
-
-# #
-# # Create the projection plot of the clustered segments
-# #
-# plot_projection <- function(df, sample.size){
-#   # plot the projection of the segmented image data in 2D, using the
-#   # mean segment colors as the colors for the points in the projection
-#   index = sample(1:nrow(df), sample.size)
-#   return(ggplot(df[index,], aes(x=x, y=y, col=color)) + geom_point(size=2) + scale_color_identity())
+# segment_image = function(img, n){
+#   # create a flat, segmented image data set using kmeans
+#   # Segment an RGB image into n groups based on color values using Kmeans
+#   df = data.frame(
+#     red = matrix(img[,,1], ncol=1),
+#     green = matrix(img[,,2], ncol=1),
+#     blue = matrix(img[,,3], ncol=1)
+#   )
+#   K = kmeans(df,n)
+#   df$label = K$cluster
+#   
+#   # compute rgb values and color codes based on Kmeans centers
+#   colors = data.frame(
+#     label = 1:nrow(K$centers), 
+#     R = K$centers[,"red"],
+#     G = K$centers[,"green"],
+#     B = K$centers[,"blue"],
+#     color=rgb(K$centers)
+#   )
+#   
+#   # merge color codes on to df but maintain the original order of df
+#   df$order = 1:nrow(df)
+#   df = merge(df, colors)
+#   df = df[order(df$order),]
+#   df$order = NULL
+#   
+#   return(df)
+#   
 # }
-
+# 
 # #
-# # Inspect
+# # reconstitue the segmented images to RGB matrix
 # #
-# inspect_segmentation <- function(image.raw, image.segmented, image.proj){
-#   # helper function to review the results of segmentation visually
-#   img1 = rasterGrob(image.raw)
-#   img2 = rasterGrob(image.segmented)
-#   plt = plot_projection(image.proj, 50000)
-#   grid.arrange(arrangeGrob(img1,img2, nrow=1),plt)
+# build_segmented_image = function(df, img){
+#   # reconstitue the segmented images to RGB array
+#   
+#   # get mean color channel values for each row of the df.
+#   R = matrix(df$R, nrow=dim(img)[1])
+#   G = matrix(df$G, nrow=dim(img)[1])
+#   B = matrix(df$B, nrow=dim(img)[1])
+#   
+#   # reconsitute the segmented image in the same shape as the input image
+#   img_segmented = array(dim=dim(img))
+#   dim(img_segmented)
+#   img_segmented[,,1] = R
+#   img_segmented[,,2] = G
+#   img_segmented[,,3] = B
+#   
+#   return(img_segmented)
 # }
-
-
-get_kmean_image2D <- function(file, k){
-  img <- readJPEG(file)
-  df <- segment_image(img, k)
-  
-  img_segmented <- build_segmented_image(df, img)
-  
-  ## convert matrix to Image
-  ## rotate and flop to get the same orientation as in the last k-mean code
-  img <- flop(rotate(Image(img, colormode=Color), 90))
-  img_segmented <- flop(rotate(Image(img_segmented, colormode=Color), 90))
-  
-  
-  par(mfrow=c(1,2))
-  plot(img_segmented, title= "reconstitute image using k-mean clustering")
-  text(470, -50, "k-means reconstituted image ", cex = 1.5)
-  plot(img, title= "original image")
-  text(500, -50, " Original image", cex = 1.5)
-}
-
-get_kmean_image2D("basales.jpg", 6)
-
-
-
-# library(rgl)
-# library(jpeg)
-# img <- readJPEG("basales.jpg")
-# img_kmeans_df <- segment_image(img,6)
-# img_project2D <- project2D_from_RGB(img_kmeans_df)
-# img_project2D <- Image(img_Proj2D_df, colormode = Color)
-# rgl::plot3d(img_Proj2D_df, col = rainbow(1000))
+# 
+# #
+# # 2D projection for visualizing the kmeans clustering
+# #
+# project2D_from_RGB = function(df){
+#   # Compute the projection of the RGB channels into 2D
+#   PCA = prcomp(df[,c("red","green","blue")], center=TRUE, scale=TRUE)
+#   pc2 = PCA$x[,1:2]
+#   df$x = pc2[,1]
+#   df$y = pc2[,2]
+#   return(df[,c("x","y","label","R","G","B", "color")])
+# }
+# 
+# # #
+# # # Create the projection plot of the clustered segments
+# # #
+# # plot_projection <- function(df, sample.size){
+# #   # plot the projection of the segmented image data in 2D, using the
+# #   # mean segment colors as the colors for the points in the projection
+# #   index = sample(1:nrow(df), sample.size)
+# #   return(ggplot(df[index,], aes(x=x, y=y, col=color)) + geom_point(size=2) + scale_color_identity())
+# # }
+# 
+# # #
+# # # Inspect
+# # #
+# # inspect_segmentation <- function(image.raw, image.segmented, image.proj){
+# #   # helper function to review the results of segmentation visually
+# #   img1 = rasterGrob(image.raw)
+# #   img2 = rasterGrob(image.segmented)
+# #   plt = plot_projection(image.proj, 50000)
+# #   grid.arrange(arrangeGrob(img1,img2, nrow=1),plt)
+# # }
+# 
+# 
+# get_kmean_image2D <- function(file, k){
+#   require(jpeg)
+#   img <- readJPEG(file)
+#   df <- segment_image(img, k)
+#   
+#   img_segmented <- build_segmented_image(df, img)
+#   
+#   ## convert matrix to Image
+#   ## rotate and flop to get the same orientation as in the last k-mean code
+#   img <- flop(rotate(Image(img, colormode=Color), 90))
+#   img_segmented <- flop(rotate(Image(img_segmented, colormode=Color), 90))
+#   
+#   
+#   par(mfrow=c(1,2))
+#   plot(img_segmented, title= "reconstitute image using k-mean clustering")
+#   text(470, -50, "k-means reconstituted image ", cex = 1.5)
+#   plot(img, title= "original image")
+#   text(500, -50, " Original image", cex = 1.5)
+# }
+# 
+# # get_kmean_image2D("basales.jpg", 5)
+# 
+# 
+# ## plot 3D image
+# # library(rgl)
+# # library(jpeg)
+# # img <- readJPEG("basales.jpg")
+# # img_kmeans_df <- segment_image(img,6)
+# # img_project2D <- project2D_from_RGB(img_kmeans_df)
+# # img_project2D <- Image(img_Proj2D_df, colormode = Color)
+# # rgl::plot3d(img_Proj2D_df, col = rainbow(1000))
 ```
+
+
+
+
+# Highlight cellular components using k thresholds
+
+```{r}
+im <- readImage("basales.jpg")
+# reshape image into a data frame
+df = data.frame(
+  red = matrix(im[,,1], ncol=1),
+  green = matrix(im[,,2], ncol=1),
+  blue = matrix(im[,,3], ncol=1)
+)
+
+### compute the k-means clustering
+K <- kmeans(df,5)
+df$label <- K$cluster
+
+### Replace the color of each pixel in the image with the mean 
+### R,G, and B values of the cluster in which the pixel resides:
+
+# get the coloring
+colors <- data.frame(
+  label = 1:nrow(K$centers), 
+  R = K$centers[,"red"],
+  G = K$centers[,"green"],
+  B = K$centers[,"blue"]
+)
+colors
+```
+
+
+```{r}
+# convert array to cimg for imager package from dim(x,y,channel) to dim(x, y, 1, channels)
+# ignore warning message
+suppressWarnings(im.segmented_cimg <- imager::as.cimg(im.segmented))
+# Splitting image by color)
+img.R <- imager::imsplit(im.segmented_cimg,"c")[1]
+
+scale1 <- function(r,g,b) rgb( r< 0.7006928, g < 0.5978856 && g >0.4191299, b < 0.7021399 && b > 0.6981221)
+scale2 <- function(r,g,b) rgb( r < 0.6800695, g < 0.4191247 , b < 0.5305520)
+scale3 <- function(r,g,b) rgb( r> 0.8699541, g > 0.7725557 , b > 0.7824795)
+scale4 <- function(r,g,b) rgb( r> 0.8543942, g < 0.6191575 && g>0.5978856 , b < 0.6981221 && b > 0.5738834)
+scale5 <- function(r,g,b) rgb( r> 0.8278477, g < 0.4976306 && g>0.4191247 , b < 0.5738834 && b > 0.5305520)
+
+
+
+par(mfrow=c(2,2))
+#plot(im)
+plot(im.segmented)
+plot(im.segmented_cimg > .7, axes = FALSE, rescale = TRUE)
+plot(im.segmented_cimg,colourscale= scale1,rescale=FALSE, axe =TRUE)
+plot(im.segmented_cimg,colourscale= scale2,rescale=FALSE, axe =TRUE)
+plot(im.segmented_cimg,colourscale= scale3,rescale=TRUE, axe =FALSE)
+plot(im.segmented_cimg,colourscale= scale4,rescale=TRUE, axe =FALSE)
+plot(im.segmented_cimg,colourscale= scale4,rescale=TRUE, axe =FALSE)
+#plot(im.segmented_cimg,colourscale= cyto.scale,rescale=TRUE, axe =FALSE)
+
+# im.segmented_cimg_slot <-  grayscale(readImage("basales.jpg"))
+# plot(im.segmented_cimg_slot)
+# im.segmented_cimg_gblur <- gblur(im.segmented_cimg_slot, sigma = 5)
+# im.blur.thr.cnt <- bwlabel(im.segmented_cimg_gblur > otsu(im.segmented_cimg_gblur))
+# N <- max(im.blur.thr.cnt)
+# N
+```
+
+
+
+
+
 
