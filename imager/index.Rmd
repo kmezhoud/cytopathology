@@ -22,12 +22,24 @@ library(imager)
 # load image
 papSmear <- load.image('papSmear.jpg')
 papSmear
+dim(papSmear)
 par(mfrow=c(1,2))
 plot(papSmear)
 plot(grayscale(papSmear))
 ```
 Depth = 1 means the object is a static image and not video. <br />
 Clour channels = 3 means the image content Red, Green, Blue colours.
+
+```{r}
+#G(papSmear) <- 0
+R(papSmear) <- 0
+#B(papSmear) <- 0
+plot(papSmear)
+```
+
+
+
+
 
 ```{r}
 layout(t(1:2))
@@ -196,6 +208,7 @@ highlight(px)
 ```{r}
 par(mfrow=c(1,2))
 plot(im)
+#Start the fill at location (180,274). sigma sets the tolerance
 px.flood(im,278,300,sigma=.31) %>% highlight
 sp <- split_connected(px)
 plot(sp[1:4])
@@ -205,6 +218,7 @@ plot(sp[1:4])
 
 ```{r}
 par(mfrow=c(1,2))
+#The boundary function computes the boundaries of the set:
 boundary(px) %>% plot(main = "px <- isoblur(im, 1)  > .6")
 boundary(im) %>% plot( main= "im")
 ```
@@ -213,6 +227,7 @@ boundary(im) %>% plot( main= "im")
 ```{r}
 par(mfrow=c(1,2))
 plot(im, main= "im with boundary")
+###Make your own highlight function:
 boundary(px) %>% where %$% { points(x,y,cex=.1,col="red") }
 plot(im, main="im with highlight(px)")
 highlight(px)
@@ -221,7 +236,7 @@ highlight(px)
 
 
 ```{r}
-################
+## The grow and shrink operators let you grow and shrink pixsets using morphological operators (dilation and erosion, resp.)
 #par(mfrow=c(1,2))
 plot(im, main="with shink")
 highlight(px)
