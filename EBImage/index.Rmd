@@ -25,7 +25,7 @@ output:
 im <- readImage("papSmear_bg.jpg")
 par(mfrow=c(1,2))
 plot(im)
-display(im, method = "raster") # raster method means within R
+EBImage::display(im, method = "raster") # raster method means within R
 ```
 
 
