@@ -139,8 +139,9 @@ dim(im)
 
 ```{r}
 
-get_kmean_image <- function(file, k, cat){
-  im <- readImage(file)
+get_kmean_image <- function(file, k){
+  
+  im <- EBImage::readImage(file)
   # reshape image into a data frame
   df = data.frame(
     red = matrix(im[,,1], ncol=1),
@@ -172,49 +173,78 @@ get_kmean_image <- function(file, k, cat){
   df$order <- 1:nrow(df)
   df <- merge(df, colors)
   ## split image into two dataframe df.x contain 1 label, df.y contain the remain labels
-  if(cat %in% seq(k)){
-    df.x <- df[df$label == cat,]
-    df.y <- df[!df$label == cat,]
-    ## replace value in df.y  to 255 (white)
-    df.y[,c('red','green', 'blue', 'R', 'G', 'B')] <- 255
+  #if(cat %in% seq(k)){
+  
+  #if(cat == "all"){
+  
+  
+  M <- vector("list", k)
+  for(i in seq(k)){
     
-    df <- rbind(df.x, df.y)
+    ## preserve original df
+    m <- df
+    # m$order <- 1:nrow(m)
+    
+    m.x <- m[m$label == i,]
+    m.y <- m[!m$label == i,]
+    
+    ## replace value in df.y  to 255 (white)
+    m.y[,c('red','green', 'blue', 'R', 'G', 'B')] <- 255
+    m <- rbind(m.x, m.y)
+    
+    # reorder the matrix (image)
+    m <- m[order(m$order),]
+    m$order = NULL
+    
+    
+    
+    # df.x <- df[df$label == cat,]
+    #df.y <- df[!df$label == cat,]
+    ## replace value in df.y  to 255 (white)
+    #df.y[,c('red','green', 'blue', 'R', 'G', 'B')] <- 255
+    
+    #df <- rbind(df.x, df.y)
+    #}
+    # reorder the matrix (image)
+    #df <- df[order(df$order),]
+    #df$order = NULL
+    
+    # get mean color channel values for each row of the df.
+    R <- matrix(m$R, nrow=dim(im)[1])
+    G <- matrix(m$G, nrow=dim(im)[1])
+    B <- matrix(m$B, nrow=dim(im)[1])
+    
+    # reconstitute the segmented image in the same shape as the input image
+    im.segmented <- array(dim=dim(im))
+    im.segmented[,,1] = R
+    im.segmented[,,2] = G
+    im.segmented[,,3] = B
+    
+    # convert array to cimg for imager package from dim(x,y,channel) to dim(x, y, 1, channels)
+    # ignore warning message if necessary
+    #suppressWarnings(im.segmented_cimg <- imager::as.cimg(im.segmented))
+    M[[i]] <- EBImage::Image(im.segmented, colormode=Color)
+    
+    im.segmented <- EBImage::Image(im.segmented, colormode=Color)
+    plot(im.segmented, title= paste0("Cluster: " ,i, sep= "~"))
+    text(470, -50, paste0("Cluster: " ,i, sep= "~"), cex = 1.5)
+    #plot(im, title= "original image")
+    #text(500, -50, " Original image", cex = 1.5)
+    #  }
   }
-  # reorder the matrix (image)
-  df <- df[order(df$order),]
-  df$order = NULL
-  
-  # get mean color channel values for each row of the df.
-  R <- matrix(df$R, nrow=dim(im)[1])
-  G <- matrix(df$G, nrow=dim(im)[1])
-  B <- matrix(df$B, nrow=dim(im)[1])
-  
-  # reconstitute the segmented image in the same shape as the input image
-  im.segmented <- array(dim=dim(im))
-  im.segmented[,,1] = R
-  im.segmented[,,2] = G
-  im.segmented[,,3] = B
-  
-  # convert array to cimg for imager package from dim(x,y,channel) to dim(x, y, 1, channels)
-  # ignore warning message if necessary
-  #suppressWarnings(im.segmented_cimg <- imager::as.cimg(im.segmented))
-  
-  im.segmented <- Image(im.segmented, colormode=Color)
-  par(mfrow=c(1,2))
-  plot(im.segmented, title= "reconstitute image using k-mean clustering")
-  text(470, -50, "k-means reconstituted image ", cex = 1.5)
-  plot(im, title= "original image")
-  text(500, -50, " Original image", cex = 1.5)
-  
-  
+  return(M)
 }
 
-get_kmean_image(file = "basales.jpg", k = 5, cat= 1)
-get_kmean_image(file = "basales.jpg", k = 5, cat= 2)
-get_kmean_image(file = "basales.jpg", k = 5, cat= 3)
-get_kmean_image(file = "basales.jpg", k = 5, cat= 4)
-get_kmean_image(file = "basales.jpg", k = 5, cat= 5)
-#get_kmean_image(file = "basales.jpg", k = 6, cat= 6)
+
+
+par(mfrow=c(2,3))
+plot(im)
+M <- get_kmean_image(file = "basales.jpg", k = 5)
+get_kmean_image(file = "basales.jpg", k = 5)
+get_kmean_image(file = "basales.jpg", k = 5)
+get_kmean_image(file = "basales.jpg", k = 5)
+get_kmean_image(file = "basales.jpg", k = 5)
+
 ```
 
 
@@ -416,7 +446,167 @@ plot(im.segmented_cimg,colourscale= scale4,rescale=TRUE, axe =FALSE)
 ```
 
 
+## opening, propagate and makeBrush
+```{r}
+Result <- get_kseg_image("papSmear.jpg", k= 4)
+cyto <- Result$seg_image$cluster3
+nuc <- Result$seg_image$cluster2
+
+nmask <- thresh(cyto, w=2, h=2, offset=0.05)
+## makeBrush rempli le vide dans un cytoplame
+nmask <- opening(nmask, makeBrush(3, shape='disc'))
+#nmask <- fillHull(nmask)
+#nmask <- bwlabel(nmask)
+
+ctmask <- opening(cyto, makeBrush(3, shape='disc'))
+cmask <- propagate(cyto, seeds=nmask, mask=ctmask)
+display(cmask/max(cmask), all=TRUE, title="Figure 19: cmask/max(cmask)")
+```
+
+
+## clean nuclear from cellular membrane
+```{r}
+Result <- get_kseg_image("papSmear.jpg", k= 4)
+cyto <- Result$seg_image$cluster4
+nuc <- Result$seg_image$cluster2
+
+plot(nuc)
+
+
+```
+
+
+We would like to remove non nuclear material 
+```{r}
+## not rigth for cytoplasm
+#cyto.blur <- EBImage::gblur(cyto, sigma = 0.4)
+nuc.blur <- EBImage::gblur(nuc, sigma = 0.4)
+plot(nuc.blur)
+```
+
+
+## count nucleus does not work
+```{r}
+plot(nuc.blur)
+nuc.blur.gray <- channel(nuc.blur, mode = "gray")
+nuc.blur.gray.cnt <- EBImage::bwlabel(nuc.blur.gray)
+max(nuc.blur.gray.cnt > 0)
+plot(nuc.blur.gray)
+max(nuc.blur.gray.cnt)
+```
+
+
+## merge cyto + nuc to count cells
+```{r}
+cytoNuc <- merge2img(cyto, nuc)
+plot(cytoNuc)
+cytoNuc.gray <- channel(cytoNuc, mode = "gray")
+plot(cytoNuc.gray)
+cytoNuc.gray.gblur <- EBImage:: gblur(cytoNuc.gray, sigma = 0.4)
+plot(cytoNuc.gray.gblur)
+threshold = otsu(cytoNuc.gray.gblur)
+cytoNuc.gary.gblur.cnt <- EBImage::bwlabel(cytoNuc.gray.gblur)
+max(cytoNuc.gary.gblur.cnt > threshold)
+display(colorLabels(bwlabel(cytoNuc.gray.gblur> .26)), method = "raster", all = TRUE)
+```
 
 
 
+
+
+```{r}
+get_kseg_image <- function(file, k){
+  
+  im <- EBImage::readImage(file)
+  # reshape image into a data frame
+  df <- data.frame(
+    red = matrix(im[,,1], ncol=1),
+    green = matrix(im[,,2], ncol=1),
+    blue = matrix(im[,,3], ncol=1)
+  )
+  
+  ### compute the k-means clustering
+  set.seed(1234)
+  K = kmeans(df,k)
+  df$label = K$cluster
+  
+  ### Replace the color of each pixel in the image with the mean 
+  ### R,G, and B values of the cluster in which the pixel resides:
+  
+  # get the coloring
+  colors = data.frame(
+    label = 1:nrow(K$centers), 
+    R = K$centers[,"red"],
+    G = K$centers[,"green"],
+    B = K$centers[,"blue"]
+  )
+  
+  # merge color codes on to df
+  # IMPORTANT: we must maintain the original order of the df after the merge!
+  
+  df$order <- 1:nrow(df)
+  df <- merge(df, colors)
+  
+  ## define a list of element where we will store segmented matrices
+  M <- vector("list", k)
+  IM <- vector("list", k)
+  for(i in seq(k)){
+    
+    m <- df
+    
+    ## split image into two dataframe df.x contain 1 label, df.y contain the remain labels
+    m.x <- m[m$label == i,]
+    m.y <- m[!m$label == i,]
+    
+    ## replace value in df.y  to 255 (white)
+    m.y[,c('red','green', 'blue', 'R', 'G', 'B')] <- 255
+    m <- rbind(m.x, m.y)
+    
+    # reorder the matrix (image)
+    m <- m[order(m$order),]
+    m$order = NULL
+    
+    # get mean color channel values for each row of the df.
+    R <- matrix(m$R, nrow=dim(im)[1])
+    G <- matrix(m$G, nrow=dim(im)[1])
+    B <- matrix(m$B, nrow=dim(im)[1])
+    
+    # reconstitute the segmented image in the same shape as the input image
+    im.segmented <- array(dim=dim(im))
+    im.segmented[,,1] = R
+    im.segmented[,,2] = G
+    im.segmented[,,3] = B
+    
+    IM[[paste0("cluster",i, sep="")]] <- im.segmented
+    # convert array to cimg for imager package from dim(x,y,channel) to dim(x, y, 1, channels)
+    # ignore warning message if necessary
+    #suppressWarnings(im.segmented_cimg <- imager::as.cimg(im.segmented))
+    M[[paste0("cluster",i, sep="")]] <- EBImage::Image(im.segmented, colormode=Color)
+    
+    im.segmented <- EBImage::Image(im.segmented, colormode=Color)
+    plot(im.segmented, title= paste0("Cluster: " ,i, sep= "~"))
+    text(60, 5, paste0("Cluster: " ,i, sep= "~"), cex = 1.5)
+  }
+  return(list(seg_array = IM, seg_image = M))
+}
+
+```
+
+
+## sum array does not work
+
+```{r}
+Result <- get_kseg_image("papSmear.jpg", k= 4)
+cyto <- Result$seg_image$cluster4
+nuc <- Result$seg_image$cluster2
+cytoNuc <- cyto - nuc 
+plot(cytoNuc)
+cytoNuc_gray <- channel(cytoNuc, mode = "gray")
+cytoNuc_gray_gblur <- EBImage:: gblur(cytoNuc_gray, sigma = 0.4)
+plot(cytoNuc_gray_gblur)
+#threshold = otsu(cytoNuc_gray_gblur)
+cytoNuc_gray_gblur_cnt <- EBImage::bwlabel(cytoNuc_gray_gblur)
+max(cytoNuc_gray_gblur_cnt)
+
+```
 
