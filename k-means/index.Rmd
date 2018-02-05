@@ -40,7 +40,7 @@ str(df)
 set.seed(1234)
 K = kmeans(df,5)
 str(K)
-dim(K$centers)
+K$centers
 ```
 ```{r}
 df$label = K$cluster
@@ -239,11 +239,11 @@ get_kmean_image <- function(file, k){
 
 par(mfrow=c(2,3))
 plot(im)
-M <- get_kmean_image(file = "basales.jpg", k = 5)
+#M <- get_kmean_image(file = "basales.jpg", k = 5)
 get_kmean_image(file = "basales.jpg", k = 5)
-get_kmean_image(file = "basales.jpg", k = 5)
-get_kmean_image(file = "basales.jpg", k = 5)
-get_kmean_image(file = "basales.jpg", k = 5)
+#get_kmean_image(file = "basales.jpg", k = 5)
+#get_kmean_image(file = "basales.jpg", k = 5)
+#get_kmean_image(file = "basales.jpg", k = 5)
 
 ```
 
@@ -448,6 +448,7 @@ plot(im.segmented_cimg,colourscale= scale4,rescale=TRUE, axe =FALSE)
 
 ## opening, propagate and makeBrush
 ```{r}
+source("../R/get_kseg_image.R")
 Result <- get_kseg_image("papSmear.jpg", k= 4)
 cyto <- Result$seg_image$cluster3
 nuc <- Result$seg_image$cluster2
@@ -466,6 +467,7 @@ display(cmask/max(cmask), all=TRUE, title="Figure 19: cmask/max(cmask)")
 
 ## clean nuclear from cellular membrane
 ```{r}
+source("../R/get_kseg_image.R")
 Result <- get_kseg_image("papSmear.jpg", k= 4)
 cyto <- Result$seg_image$cluster4
 nuc <- Result$seg_image$cluster2
@@ -496,7 +498,7 @@ max(nuc.blur.gray.cnt)
 ```
 
 
-## merge cyto + nuc to count cells
+## merge cyto + nuc to count cells does not work
 ```{r}
 cytoNuc <- merge2img(cyto, nuc)
 plot(cytoNuc)
