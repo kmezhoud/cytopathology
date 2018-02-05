@@ -1,0 +1,42 @@
+---
+title: "K-Medoids"
+output:
+  html_document:
+    df_print: paged
+---
+
+Here is an example of [K-medoids definition](http://www.sthda.com/english/articles/27-partitioning-clustering-essentials/88-k-medoids-essentials/). Thanks to [kassambra](http://www.sthda.com/english/user/profile/1).
+
+## conclusion 
+ Partitioning Around Medoids method has limit capacity of computing 65536 pixels (bad resolution 128 x 96).
+ The result is shown bellow.
+ We can not use this method.
+
+# Partitioning Around Medoids
+```{r}
+library(EBImage)
+im <- EBImage::readImage("basales.jpg")
+## we need to resize image (pam is limited to 65536 pixels means 1024 x 768 pixels  1/8)
+ ## reduce the size of image 1/8
+    ims <- EBImage::resize(im, dim(im)[1]/8)
+# reshape image into a data frame
+df = data.frame(
+  red = matrix(ims[,,1], ncol=1),
+  green = matrix(ims[,,2], ncol=1),
+  blue = matrix(ims[,,3], ncol=1)
+)
+
+### compute the pam clustering
+library(cluster)
+source(file = "../R/get_kseg_image.R")
+ kmedoid.seg <-  get_seg_image("basales.jpg", 5, method = 'pam')
+# 
+par(mfrow=c(2,3))
+plot(ims)
+plot(kmedoid.seg$seg_image$cluster1)
+plot(kmedoid.seg$seg_image$cluster2)
+plot(kmedoid.seg$seg_image$cluster3)
+plot(kmedoid.seg$seg_image$cluster4)
+plot(kmedoid.seg$seg_image$cluster5)
+```
+
