@@ -105,9 +105,11 @@ display(colorLabels(im.blur.thr.cnt), method= "raster")
 ```{r}
 getCelLab <- function(img, bright, sigma ){
 
-im <- readImage("papSmear_bg.jpg")
+im <- readImage(img)
+im <- EBImage::channel(im, mode= "gray")
 im2 <- im * bright
 im.blur <- gblur(im, sigma)
+plot(im.blur)
 ## filtering option 
 
 im.blur.thr.cnt <- bwlabel(im.blur > otsu(im.blur))
@@ -124,6 +126,7 @@ return(N)
 getCelLab("papSmear.jpg", 2, 5)
 getCelLab("papSmear_g.jpg", 2, 2)
 getCelLab("papSmear_bg.jpg", 2, 0.1)
+getCelLab("basale_inverse_gray.jpg", 2, 1)
 ```
 
 ```{r}
