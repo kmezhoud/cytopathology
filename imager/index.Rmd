@@ -152,7 +152,16 @@ head(df2,3)
 
 
 ```{r}
+papSmear <- load.image('papSmear.jpg')
+papSmear.G <- grayscale(papSmear)
+im <- EBImage::readImage("papSmear.jpg")
+im.G <- EBImage::channel(im, mode="gray")
+papSmear.G.blur <- EBImage::gblur(im.G, sigma = 5)
 par(mfrow=c(1,2))
+plot(papSmear.G) 
+plot(papSmear.G.blur )
+head(as.data.frame(papSmear.G.blur))
+plot(imager::blur_anisotropic(papSmear.G, ampl=1e4,sharp=1) )
 centers1 <- dplyr::group_by(df1,value) %>% dplyr::summarise(mx=mean(x),my=mean(y))
 plot(lab1)
 with(centers1, points(mx, my, col="yellow"))
