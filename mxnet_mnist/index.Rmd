@@ -1,0 +1,86 @@
+---
+title: "mxnet example 1: recognising manual written digital number (mnist data set) "
+output: html_notebook
+---
+
+
+```{r}
+# Data preparation
+train <- read.csv('https://github.com/ozt-ca/tjo.hatenablog.samples/raw/master/r_samples/public_lib/jp/mnist_reproduced/short_prac_train.csv')
+test <- read.csv('https://github.com/ozt-ca/tjo.hatenablog.samples/raw/master/r_samples/public_lib/jp/mnist_reproduced/short_prac_test.csv')
+train <- data.matrix(train)
+test <- data.matrix(test)
+train.x <- train[,-1]
+train.y <- train[,1]
+train.x <- t(train.x/255)
+test_org <- test
+test <- test[,-1]
+test <- t(test/255)
+test_org[97:103,1:7]
+```
+
+```{r}
+data <- mx.symbol.Variable("data")
+ fc1 <- mx.symbol.FullyConnected(data, name="fc1", num_hidden=128)
+ act1 <- mx.symbol.Activation(fc1, name="relu1", act_type="relu")
+ fc2 <- mx.symbol.FullyConnected(act1, name="fc2", num_hidden=64)
+ act2 <- mx.symbol.Activation(fc2, name="relu2", act_type="relu")
+ fc3 <- mx.symbol.FullyConnected(act2, name="fc3", num_hidden=10)
+ softmax <- mx.symbol.SoftmaxOutput(fc3, name="sm")
+ devices <- mx.cpu()
+ mx.set.seed(0)
+ model <- mx.model.FeedForward.create(softmax, X=train.x, y=train.y, ctx=devices, num.round=10, array.batch.size=100,
+                                      learning.rate=0.07, momentum=0.9,  eval.metric=mx.metric.accuracy,
+                                      initializer=mx.init.uniform(0.07),
+                                      epoch.end.callback=mx.callback.log.train.metric(100))
+```
+
+
+```{r}
+ preds <- predict(model, test)
+ dim(preds)
+ dim(test)
+ t(preds[1:8,1:7])
+```
+
+
+
+```{r}
+## get max.col only for the 7 first rows
+max.col(t(preds))[1:7]
+
+##  rea-ttribute labels to tested images
+pred.label <- max.col(t(preds)) - 1
+table(pred.label)
+
+```
+
+Normally, there are 100 images by digital number. for example 0 gets 95, there are 5 image not classed as zero.
+-1: I think because R starts conting position of matrices by 1, C++ starts counting latruces by 0
+`max.col` returns the position (column number/index ) of higher number in each row.
+
+```{r}
+## predicted labels
+table(pred.label)
+
+## initial labels
+table(test_org[,1])
+## compare predicted label with initial labels
+table(test_org[,1], pred.label)
+```
+
+
+
+```{r}
+## get means of identical labels, located in the diagonal
+sum(diag(table(test_org[,1],pred.label)))/1000
+```
+
+To predicted an other dataset of image
+
+```{r}
+#  results <- predict(model, new.dataset)
+## same as
+# results <- mxnet:::predict.MXFeedForwardModel(model, new.dataset)
+```
+
