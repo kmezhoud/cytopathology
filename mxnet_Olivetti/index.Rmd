@@ -1,6 +1,8 @@
 ---
-title: "mxnet example 2 : Olivetti faces"
-output: html_notebook
+title: 'mxnet example 2 : Olivetti faces'
+output:
+  html_document:
+    df_print: paged
 ---
 
 The data is loaded from the `pre-processing_facette.py` [script](https://gist.github.com/mick001/0782247969b1fa25795b09574d7ecf0a#file-convolutional_nn_tutorial_1-py).
