@@ -1,10 +1,13 @@
 ---
-title: "mxnet example 1: recognising manual written digital number (mnist data set) "
-output: html_notebook
+title: 'mxnet example 1: recognising manual written digital number (mnist data set) '
+output:
+  html_document:
+    df_print: paged
 ---
 
 
 ```{r}
+library(mxnet)
 # Data preparation
 train <- read.csv('https://github.com/ozt-ca/tjo.hatenablog.samples/raw/master/r_samples/public_lib/jp/mnist_reproduced/short_prac_train.csv')
 test <- read.csv('https://github.com/ozt-ca/tjo.hatenablog.samples/raw/master/r_samples/public_lib/jp/mnist_reproduced/short_prac_test.csv')
