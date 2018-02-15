@@ -74,7 +74,7 @@ colors
 
 df$order <- 1:nrow(df)
 df <- merge(df, colors)
-## split image into two dataframe df.x contain 1 label, df.y contain the remain labels
+## split image into two dataframe df.x contain 1 label, df.y contain the remain labels (segmentation)
 
 df.x <- df[df$label == 1,]
 df.y <- df[!df$label == 1,]

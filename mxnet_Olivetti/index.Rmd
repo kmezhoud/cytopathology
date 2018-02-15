@@ -57,6 +57,18 @@ require(EBImage)
 X <- read.csv("olivetti_X.csv", header = F)
 labels <- read.csv("olivetti_y.csv", header = F)
 
+## try to plot the first image from X (we don't have the need to transpose matrix t() as in this tutorial)
+
+# i <- EBImage::Image(as.numeric(X[1,]))
+# sqr <- sqrt(length(X[1,])) 
+# dim(i) <- c(sqr,sqr, 1)
+# i <- EBImage::resize(i, w= 64, h= 64)
+# plot(i)
+# 
+# vec <- as.vector(i)
+# plot(Image(vec, dim=c(64,64)))
+
+
 # Dataframe of resized images
 rs_df <- data.frame()
 
@@ -67,14 +79,18 @@ for(i in 1:nrow(X))
     result <- tryCatch({
     # Image (as 1d vector)
     img <- as.numeric(X[i,])
+    ## convert to grayscale
+    img <- EBImage::channel(img, mode = "gray")
+    
     # Reshape as a 64x64 image (EBImage object)
-    img <- Image(img, dim=c(64, 64), colormode = "Grayscale")
+   # img <- Image(img, dim=c(64, 64))
+    
     # Resize image to 28x28 pixels
-    img_resized <- resize(img, w = 28, h = 28)
+    img_resized <- EBImage::resize(img, w = 28, h = 28)
     # Get image matrix (there should be another function to do this faster and more neatly!)
     img_matrix <- img_resized@.Data
     # Coerce to a vector
-    img_vector <- as.vector(t(img_matrix))
+    img_vector <- as.vector(t(img_matrix))    #####  WHY TRANSPOSE ???
     # Add label
     label <- labels[i,]
     vec <- c(label, img_vector)
@@ -179,7 +195,7 @@ NN_model <- mx.symbol.SoftmaxOutput(data = fc_2)
 ```{r}
 # Pre-training set up
 #-------------------------------------------------------------------------------
-
+require(mxnet)
 # Set seed for reproducibility
 mx.set.seed(100)
 
@@ -213,6 +229,8 @@ predicted <- predict(model, test_array)
 predicted_labels <- max.col(t(predicted)) - 1
 # Get accuracy
 table(test[, 1], predicted_labels)
+## get means of identical labels, located in the diagonal
+sum(diag(table(test[,1],predicted_labels)))/40
 predicted[1:8, 1:7]
 ```
 
