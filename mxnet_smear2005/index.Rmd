@@ -1,0 +1,384 @@
+---
+title: 'mxnet example 3 : PapSmear 2005'
+output:
+  html_document:
+    df_print: paged
+---
+
+The dataset is loaded from this [work](https://diagnosticpathology.biomedcentral.com/articles/10.1186/1746-1596-8-S1-S38).
+
+The images in the dataset illustrate different status of cervix cells. The images are classed by folder for each status. Each image focus on only one cell. There is two version of each image: original image with `.BMP` extension and filtered image with `_d.bmp` extension.
+
+first of all, I separate these two kinds of images. The first step is to apply `mxnet` only on original images. for this I moved original image from `carcinoma_in_situ/` folder to `carcinoma_in_situ_org/`, like this
+
+```{bash}
+# cd carcinoma_in_situ/
+# mv `ls | grep '\w*.BMP'` ../carcinoma_in_situ_org/
+
+```
+In the end we have `img_data` filder which contains 7 subfolders. Each subfolder has no equal number of images. The number of images is indicated in the subfolder name.
+
+```{bash}
+ls img_data
+## count all images
+ls  img_data/* | wc -l
+```
+
+
+## Which format we have and is there the need to change it?
+We will fellow this [tutorial](https://github.com/kmezhoud/incubator-mxnet/tree/master/example/image-classification). The tutorial recommends `RecordIO`format, which concatenates multiple examples into seekable binary files for better read efficiency.
+The image have `.bmp` format file whish is not appropriate for this tutorial. We need to convert the to `png`or `jpeg` formats.
+
+
+```{r}
+require(EBImage)
+#dim(EBImage::readImage("img_data/carcinoma_in_situ_org_150/149143370-149143378-001.BMP"))
+```
+
+It seems that `bmp` format is not supported by `EBImage`. we try with `imager` package.
+
+```{r}
+require(imager)
+class(imager::load.image("img_data/carcinoma_in_situ_org_150/149143370-149143378-001.BMP"))
+dim(imager::load.image("img_data/carcinoma_in_situ_org_150/149143370-149143378-001.BMP"))
+```
+
+
+ok, We will use a loop to convert all images using `imager` load and save functions.
+
+```{r}
+require(imager)
+convert_image <- function(inputFolder, outputFolder, type = '.jpeg' ){
+  
+  names_files <- list.files(inputFolder)
+  nfiles <- length(list.files(inputFolder))
+  
+  for(k in 1:nfiles){
+    ## get image name
+    nameFile <- names_files[k]
+    # load image 
+    tmp_img <- imager::load.image(paste0(inputFolder,nameFile, sep=""))
+    # save image
+    imager::save.image(im = tmp_img, file = paste0(outputFolder, tools::file_path_sans_ext(nameFile), type , sep =""),quality = 1)
+  }
+}
+# convert_image(inputFolder = "img_data/carcinoma_in_situ_org_150/", outputFolder = "img_data/carcinoma_in_situ_org_150_jpeg/")
+# convert_image("img_data/light_dysplastic_org_182/", "img_data/light_dysplastic_org_182_jpeg/")
+# convert_image("img_data/moderate_dysplastic_org_146/", "img_data/moderate_dysplastic_org_146_jpeg/")
+# convert_image("img_data/normal_columnar_org_98/", "img_data/normal_columnar_org_98_jpeg/")
+# convert_image("img_data/normal_intermediate_org_70/", "img_data/normal_intermediate_org_70_jpeg/")
+# convert_image("img_data/normal_superficiel_org_74/", "img_data/normal_superficiel_org_74_jpeg/")
+# convert_image("img_data/severe_dysplastic_org_197/", "img_data/severe_dysplastic_org_197_jpeg/")
+```
+
+Now, We will use `im2rec.py` [script](https://github.com/kmezhoud/incubator-mxnet/blob/master/tools/im2rec.py) to convert our images into RecordIO format.
+
+
+## convert image to RecorIO format (we will not use it)
+
+We first prepare  `mydata.lst_train.lst` and `mydata.lst_val.lst` files, which consist of the labels and image paths can be used for generating rec files.
+We need to create empty `mydata.lst` files before to run python script.
+
+```{r}
+system('python im2rec.py --list --recursive --train-ratio 0.95 mydata.lst img_data')
+```
+
+The `im2rec.py` script generates the two files and get labels for each class of cells.
+If we look the number of images for train and val sets
+
+```{bash}
+cat mydata.lst_train.lst | wc -l
+cat mydata.lst_val.lst | wc -l
+```
+The sum of the two listes gives 922 images (there are 8 images = 930 - 922 not found!). 47 corresponds to 5% of all images.
+
+```{r}
+system('python im2rec.py --resize 480 --quality 95 --num-thread 16 mydata.lst img_data')
+```
+
+This command generates the `mydata.lst_val.rec` and `mydata.lst_train.rec` files. There are pre-setted models for `mnist`, `cifar`, and ` resnet` datasets. But actually I don't say how to use `.rec` dataset with theses models.
+
+## Come back to our jpeg image 
+
+```{r}
+
+## which image dimension will use. The images do not have the same dimension. We should to unify image dimension to 28x28 pixels.
+## The use of bigger dimension, increase the time of the computing but not sure to have more accuracy. 
+
+get_dim_im <- function(inputFolder ){
+  #inputFolder <- 'img_data/carcinoma_in_situ_org_150_jpeg/'
+  names_files <- list.files(inputFolder)
+  nfiles <- length(list.files(inputFolder))
+  ls_dim <- list()
+  
+  for(k in 1:nfiles){
+    ## get image name
+    nameFile <- names_files[k]
+    # load image 
+    tmp_img <- EBImage::readImage(paste0(inputFolder,nameFile, sep=""))
+    
+    #  Convert to grayscale
+     tmp_img <- EBImage::channel(tmp_img, mode = 'gray')
+     
+    # Resize image to 28x28 pixels
+    img_resized <- EBImage::resize(tmp_img, w = 28, h = 28)
+    
+    ## reduce the size of image 1/2
+    ims <- EBImage::resize(tmp_img, dim(tmp_img)[1]/2)
+    
+    ls_dim[[k]] <- dim(ims)
+  }
+  plot(ims)
+  plot(tmp_img)
+  plot(img_resized)
+  return(ls_dim[140:150])
+}
+
+get_dim_im("img_data/carcinoma_in_situ_org_150_jpeg/")
+```
+
+
+
+## Convert images from a folder to matrix: Each image in one row, set dimension 28x28x1. 
+
+
+```{r}
+#source("../R/rbindna.R")
+require(EBImage)
+images2matrix <- function(inputFolder, w= 28, h = 28, class){
+  
+  names_files <- list.files(inputFolder)
+  nfiles <- length(list.files(inputFolder))
+  
+  df <- data.frame(matrix(ncol = (w*h)+1, nrow = 0))
+  # Set names. The first column is the labels, the other columns are the pixels.
+  colnames(df) <-  c("Labels", paste("pixel", c(1:(w*h) )))
+
+  
+  for(k in 1:nfiles){
+    ## get image name
+    nameFile <- names_files[k]
+    # load image 
+    tmp_img <- EBImage::readImage(paste0(inputFolder,nameFile, sep=""))
+    
+    ## convet to grayscale
+    tmp_img <- EBImage::channel(tmp_img, mode = 'gray')
+    
+     # Resize image to 28x28 pixels
+    ims <- EBImage::resize(tmp_img, w = w, h = h)
+    ## reduce the size of image 1/2
+    #ims <- EBImage::resize(tmp_img, dim(tmp_img)[1] * scale)
+    
+    # Get image matrix (there should be another function to do this faster and more neatly!)
+    img_matrix <- ims@.Data
+    #print(dim(img_matrix))
+    
+    # Coerce to a vector
+    img_vector <- as.vector(img_matrix)
+  
+    
+    # Add label
+    label <- class
+    vec <- c(label, img_vector)
+    # Stack in rs_df using rbind
+    ## AVoid rbind, it ignore empty dataframe and colnames
+    #df <- rbind(df_bkp, vec)
+     
+     df[nrow(df)+1,] <- vec
+    
+     # Print status
+     print(paste(k,names_files[k],sep = " "))
+    
+  }
+  
+  rownames(df) <- NULL
+  return(df)
+  
+}
+
+class1_mat <- images2matrix("img_data/normal_intermediate_org_70_jpeg/", w=28, h=28 ,class= "1")
+class2_mat <- images2matrix("img_data/normal_columnar_org_98_jpeg/", w=28, h=28 , class= '2')
+class3_mat <- images2matrix("img_data/normal_superficiel_org_74_jpeg/", w=28, h=28 , class= '3')
+class4_mat <- images2matrix("img_data/light_dysplastic_org_182_jpeg/", w=28, h=28 , class= '4')
+class5_mat <- images2matrix("img_data/moderate_dysplastic_org_146_jpeg/", w=28, h=28 , class= '5')
+class6_mat <- images2matrix("img_data/carcinoma_in_situ_org_150_jpeg/", w=28, h=28 , class= '6')
+class7_mat <- images2matrix("img_data/severe_dysplastic_org_197_jpeg/", w=28, h=28 , class= '7')
+
+list.classes <- list(class1_mat, class2_mat, class3_mat, class4_mat, class5_mat, class6_mat, class7_mat)
+
+class1_mat[1:4, 1:4]
+#class2_mat[1:4, 1:4]
+dim(class1_mat)
+#dim(class2_mat)
+```
+
+
+## Visualize image directly from row
+
+```{r}
+## visualize image from vector
+vec2img <- function(df, nrow){
+  
+ i <- EBImage::Image(as.numeric(df[nrow,]))
+sqr <- sqrt(length(df[nrow,])) 
+dim(i) <- c(sqr,sqr, 1)
+i <- EBImage::resize(i, w= 156, h= 156)
+ 
+ plot(i)
+}
+vec2img(class1_mat[,-1], 65)
+
+```
+
+
+
+
+## Sampling Training and Testing dataset 
+```{r}
+set.seed(1234)
+#Train1 <-  class1_mat[sample(nrow(class1_mat),size=60,replace=FALSE),]
+#Train2 <- class2_mat[sample(nrow(class2_mat), size = 130, replace = FALSE),]
+
+## Sampling training and testing row from dataframe
+sampling_train_test <- function(df, n_test= 5 ){
+  
+  test <- dplyr::sample_n(df, n_test )
+  ## omit test rows from train and remove duplicates if exist
+  train <-  df[-duplicated(rbind(test, df)),]
+  
+  return(list(train = train, test = test))
+}
+
+# function to merge training and testing dataset from a list of dataframes (classes)
+merge_train_test <- function(list.df, n_test = 5){
+  
+  list_train_test <- lapply(list.df,sampling_train_test)
+  
+  sum_train <- data.frame()
+  sum_test <- data.frame()
+  for(i in 1:length(list_train_test)){
+    
+   sum_train <-rbind( sum_train, list_train_test[[i]]$train)
+   
+   sum_test <- rbind( sum_test, list_train_test[[i]]$test)
+    
+  }
+  return(list(allTrain = sum_train, allTest = sum_test))
+    
+}
+
+list_smp <- merge_train_test(list.classes, n_test= 5)
+
+Train <- list_smp$allTrain
+Test <- list_smp$allTest
+
+
+Test[, 1:20]
+```
+ 
+```{r}
+# Set up train and test arrays
+train <- data.matrix(Train)
+train_x <- t(train[, -1])
+train_y <- train[, 1]
+train_array <- train_x
+dim(train_array) <- c(28, 28, 1, ncol(train_x))
+
+test <- data.matrix(Test)
+test_x <- t(test[, -1])
+test_y <- test[, 1]
+test_array <- test_x
+dim(test_array) <- c(28, 28, 1, ncol(test_x))
+```
+
+```{r}
+# Set up the symbolic model
+#-------------------------------------------------------------------------------
+require(mxnet)
+data <- mx.symbol.Variable('data')
+# 1st convolutional layer
+conv_1 <- mx.symbol.Convolution(data = data, kernel = c(5, 5), num_filter = 20)
+tanh_1 <- mx.symbol.Activation(data = conv_1, act_type = "tanh")
+pool_1 <- mx.symbol.Pooling(data = tanh_1, pool_type = "max", kernel = c(2, 2), stride = c(2, 2))
+# 2nd convolutional layer
+conv_2 <- mx.symbol.Convolution(data = pool_1, kernel = c(5, 5), num_filter = 50)
+tanh_2 <- mx.symbol.Activation(data = conv_2, act_type = "tanh")
+pool_2 <- mx.symbol.Pooling(data=tanh_2, pool_type = "max", kernel = c(2, 2), stride = c(2, 2))
+# 1st fully connected layer
+flatten <- mx.symbol.Flatten(data = pool_2)
+fc_1 <- mx.symbol.FullyConnected(data = flatten, num_hidden = 500)
+tanh_3 <- mx.symbol.Activation(data = fc_1, act_type = "tanh")
+# 2nd fully connected layer
+fc_2 <- mx.symbol.FullyConnected(data = tanh_3, num_hidden = 40)
+# Output. Softmax output since we'd like to get some probabilities.
+NN_model <- mx.symbol.SoftmaxOutput(data = fc_2)
+```
+
+```{r}
+# Pre-training set up
+#-------------------------------------------------------------------------------
+
+# Set seed for reproducibility
+mx.set.seed(100)
+
+# Device used. CPU in my case.
+devices <- mx.cpu()
+
+# Training
+#-------------------------------------------------------------------------------
+
+# Train the model
+model <- mx.model.FeedForward.create(symbol = NN_model,       # The network schema
+                                     X = train_array,         # Training array
+                                     y = train_y,             # Labels/classes of training dataset
+                                     ctx = devices,
+                                     num.round = 150,
+                                     array.batch.size = 20,  # The batch size used for R array training
+                                     learning.rate = 0.02,
+                                     momentum = 0.9,
+                                     optimizer = "sgd",
+                                     eval.metric = mx.metric.accuracy,
+                                     #initializer=mx.init.uniform(0.05),
+                                     epoch.end.callback = mx.callback.log.train.metric(100))
+
+
+```
+
+
+
+```{r}
+#Predict labels
+predicted <- predict(model, test_array)
+predicted <- mxnet:::predict.MXFeedForwardModel(model = model, X = test_array)
+# Assign labels
+predicted_labels <- max.col(t(predicted)) -1
+# Get accuracy
+table(test_y, predicted_labels)  
+predicted[1:8, 1:7]
+```
+
+```{r}
+## get means of identical labels, located in the diagonal
+sum(diag(table(test_y,predicted_labels)))/length(test_y)
+```
+
+## how can plot image from selected test_y Labels/classes
+
+```{r}
+## The colnames of test_y in the rownames of the vector image
+test_y
+test[1:5, 1:5]
+```
+
+```{r}
+## we would like to select classes 3 
+selected_vec <- names(test_y[test_y==7])
+#class(test[selected_vec,][,-1][1:5, 1:6])
+
+for(i in 1: length(selected_vec)){
+vec2img(test[selected_vec,][,-1],i)
+  
+}
+
+```
+
