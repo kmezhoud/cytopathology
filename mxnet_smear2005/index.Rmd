@@ -1,5 +1,5 @@
 ---
-title: 'mxnet example 3 : PapSmear 2005'
+title: 'mxnet example 3 : PapSmear 2005 (Convoluted Neural Networks - CNN)'
 output:
   html_document:
     df_print: paged
@@ -197,16 +197,24 @@ images2matrix <- function(inputFolder, w= 28, h = 28, class){
 }
 
 class1_mat <- images2matrix("img_data/normal_intermediate_org_70_jpeg/", w=28, h=28 ,class= "1")
-class2_mat <- images2matrix("img_data/normal_columnar_org_98_jpeg/", w=28, h=28 , class= '2')
-class3_mat <- images2matrix("img_data/normal_superficiel_org_74_jpeg/", w=28, h=28 , class= '3')
-class4_mat <- images2matrix("img_data/light_dysplastic_org_182_jpeg/", w=28, h=28 , class= '4')
-class5_mat <- images2matrix("img_data/moderate_dysplastic_org_146_jpeg/", w=28, h=28 , class= '5')
-class6_mat <- images2matrix("img_data/carcinoma_in_situ_org_150_jpeg/", w=28, h=28 , class= '6')
-class7_mat <- images2matrix("img_data/severe_dysplastic_org_197_jpeg/", w=28, h=28 , class= '7')
+ class2_mat <- images2matrix("img_data/normal_columnar_org_98_jpeg/", w=28, h=28 , class= '2')
+ class3_mat <- images2matrix("img_data/normal_superficiel_org_74_jpeg/", w=28, h=28 , class= '3')
+# class4_mat <- images2matrix("img_data/light_dysplastic_org_182_jpeg/", w=28, h=28 , class= '4')
+# class5_mat <- images2matrix("img_data/moderate_dysplastic_org_146_jpeg/", w=28, h=28 , class= '5')
+# class6_mat <- images2matrix("img_data/carcinoma_in_situ_org_150_jpeg/", w=28, h=28 , class= '6')
+# class7_mat <- images2matrix("img_data/severe_dysplastic_org_197_jpeg/", w=28, h=28 , class= '7')
+listFiles <- list.files("img_data",full.names = TRUE)[-1]
+classes <- list()
+for(i in seq_len(length(listFiles))){
+  
+  classes[[paste0("c",i)]] <- images2matrix(paste0(listFiles[i], "/"), w= 28, h= 28, class= i)
+}
 
-list.classes <- list(class1_mat, class2_mat, class3_mat, class4_mat, class5_mat, class6_mat, class7_mat)
+#ts <- sapply(listFiles, function(x) images2matrix(x, w=28, h=28, class= seq_len(length(listFiles)) ))
 
-class1_mat[1:4, 1:4]
+classes <- list(class1_mat, class2_mat, class3_mat) #, class4_mat, class5_mat, class6_mat, class7_mat)
+
+class2_mat[1:4, 1:4]
 #class2_mat[1:4, 1:4]
 dim(class1_mat)
 #dim(class2_mat)
@@ -219,12 +227,14 @@ dim(class1_mat)
 ## visualize image from vector
 vec2img <- function(df, nrow){
   
+  ##  plot(EBImage::Image(x_test[1,], dim = c(28,28) ))
+  
  i <- EBImage::Image(as.numeric(df[nrow,]))
 sqr <- sqrt(length(df[nrow,])) 
 dim(i) <- c(sqr,sqr, 1)
 i <- EBImage::resize(i, w= 156, h= 156)
  
- plot(i)
+ return(plot(i))
 }
 vec2img(class1_mat[,-1], 65)
 
@@ -235,7 +245,7 @@ vec2img(class1_mat[,-1], 65)
 
 ## Sampling Training and Testing dataset 
 ```{r}
-set.seed(1234)
+
 #Train1 <-  class1_mat[sample(nrow(class1_mat),size=60,replace=FALSE),]
 #Train2 <- class2_mat[sample(nrow(class2_mat), size = 130, replace = FALSE),]
 
@@ -252,6 +262,8 @@ sampling_train_test <- function(df, n_test= 5 ){
 # function to merge training and testing dataset from a list of dataframes (classes)
 merge_train_test <- function(list.df, n_test = 5){
   
+  set.seed(1234)
+  
   list_train_test <- lapply(list.df,sampling_train_test)
   
   sum_train <- data.frame()
@@ -267,7 +279,7 @@ merge_train_test <- function(list.df, n_test = 5){
     
 }
 
-list_smp <- merge_train_test(list.classes, n_test= 5)
+list_smp <- merge_train_test(classes, n_test= 5)
 
 Train <- list_smp$allTrain
 Test <- list_smp$allTest
@@ -315,6 +327,7 @@ NN_model <- mx.symbol.SoftmaxOutput(data = fc_2)
 ```
 
 ```{r}
+require(magrittr)
 # Pre-training set up
 #-------------------------------------------------------------------------------
 
@@ -333,7 +346,7 @@ model <- mx.model.FeedForward.create(symbol = NN_model,       # The network sche
                                      y = train_y,             # Labels/classes of training dataset
                                      ctx = devices,
                                      num.round = 150,
-                                     array.batch.size = 20,  # The batch size used for R array training
+                                     array.batch.size = 20,  # number of array in the batch size
                                      learning.rate = 0.02,
                                      momentum = 0.9,
                                      optimizer = "sgd",
@@ -342,6 +355,9 @@ model <- mx.model.FeedForward.create(symbol = NN_model,       # The network sche
                                      epoch.end.callback = mx.callback.log.train.metric(100))
 
 
+summarymxnet <- summary(model$arg.params)
+ data.frame(do.call(rbind, list(summarymxnet))) %>% 
+  tibble::rownames_to_column("layers")
 ```
 
 
@@ -372,11 +388,11 @@ test[1:5, 1:5]
 
 ```{r}
 ## we would like to select classes 3 
-selected_vec <- names(test_y[test_y==7])
+selected_vec <- names(test_y[test_y==3])
 #class(test[selected_vec,][,-1][1:5, 1:6])
 
 for(i in 1: length(selected_vec)){
-vec2img(test[selected_vec,][,-1],i)
+vec2img(Test[selected_vec,][,-1],i)
   
 }
 
