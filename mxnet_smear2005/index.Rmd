@@ -253,8 +253,14 @@ vec2img(class1_mat[,-1], 65)
 sampling_train_test <- function(df, n_test= 5 ){
   
   test <- dplyr::sample_n(df, n_test )
+  
   ## omit test rows from train and remove duplicates if exist
-  train <-  df[-duplicated(rbind(test, df)),]
+  
+  ## NOT RIGHT  NOT RIGHT NOT RIGHT NOT RIGHT NOT RIGHT 
+   train <-  df[-duplicated(rbind(test, df)),]   
+  
+  ## correct sampling of train
+  # train <- df[!(rownames(df) %in% rownames(test)),]
   
   return(list(train = train, test = test))
 }
@@ -287,7 +293,9 @@ Test <- list_smp$allTest
 
 Test[, 1:20]
 ```
+
  
+### The sampling code was done with  ```train <-  df[-duplicated(rbind(test, df)),]```. It is recommandet to continue the code with ```train <- df[!(rownames(df) %in% rownames(test)),]```
 ```{r}
 # Set up train and test arrays
 train <- data.matrix(Train)

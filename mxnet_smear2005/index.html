@@ -92,6 +92,9 @@ img {
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
 }
@@ -152,16 +155,12 @@ ls  img_data/* | wc -l</code></pre>
 <p>It seems that <code>bmp</code> format is not supported by <code>EBImage</code>. we try with <code>imager</code> package.</p>
 <pre class="r"><code>require(imager)</code></pre>
 <pre><code>## Loading required package: imager</code></pre>
-<pre><code>## Loading required package: plyr</code></pre>
 <pre><code>## Loading required package: magrittr</code></pre>
 <pre><code>## 
 ## Attaching package: 'imager'</code></pre>
 <pre><code>## The following object is masked from 'package:magrittr':
 ## 
 ##     add</code></pre>
-<pre><code>## The following object is masked from 'package:plyr':
-## 
-##     liply</code></pre>
 <pre><code>## The following objects are masked from 'package:EBImage':
 ## 
 ##     channel, dilate, display, erode, resize, watershed</code></pre>
@@ -1553,8 +1552,14 @@ vec2img(class1_mat[,-1], 65)</code></pre>
 sampling_train_test &lt;- function(df, n_test= 5 ){
   
   test &lt;- dplyr::sample_n(df, n_test )
+  
   ## omit test rows from train and remove duplicates if exist
-  train &lt;-  df[-duplicated(rbind(test, df)),]
+  
+  ## NOT RIGHT  NOT RIGHT NOT RIGHT NOT RIGHT NOT RIGHT 
+   train &lt;-  df[-duplicated(rbind(test, df)),]   
+  
+  ## correct sampling of train
+  # train &lt;- df[!(rownames(df) %in% rownames(test)),]
   
   return(list(train = train, test = test))
 }
@@ -1591,6 +1596,8 @@ Test[, 1:20]</code></pre>
 {"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["Labels"],"name":[1],"type":["chr"],"align":["left"]},{"label":["pixel 1"],"name":[2],"type":["chr"],"align":["left"]},{"label":["pixel 2"],"name":[3],"type":["chr"],"align":["left"]},{"label":["pixel 3"],"name":[4],"type":["chr"],"align":["left"]},{"label":["pixel 4"],"name":[5],"type":["chr"],"align":["left"]},{"label":["pixel 5"],"name":[6],"type":["chr"],"align":["left"]},{"label":["pixel 6"],"name":[7],"type":["chr"],"align":["left"]},{"label":["pixel 7"],"name":[8],"type":["chr"],"align":["left"]},{"label":["pixel 8"],"name":[9],"type":["chr"],"align":["left"]},{"label":["pixel 9"],"name":[10],"type":["chr"],"align":["left"]},{"label":["pixel 10"],"name":[11],"type":["chr"],"align":["left"]},{"label":["pixel 11"],"name":[12],"type":["chr"],"align":["left"]},{"label":["pixel 12"],"name":[13],"type":["chr"],"align":["left"]},{"label":["pixel 13"],"name":[14],"type":["chr"],"align":["left"]},{"label":["pixel 14"],"name":[15],"type":["chr"],"align":["left"]},{"label":["pixel 15"],"name":[16],"type":["chr"],"align":["left"]},{"label":["pixel 16"],"name":[17],"type":["chr"],"align":["left"]},{"label":["pixel 17"],"name":[18],"type":["chr"],"align":["left"]},{"label":["pixel 18"],"name":[19],"type":["chr"],"align":["left"]},{"label":["pixel 19"],"name":[20],"type":["chr"],"align":["left"]}],"data":[{"1":"1","2":"0.593148092570362","3":"0.703611444577831","4":"0.698293484060291","5":"0.702626050420168","6":"0.457296251834067","7":"0.506219154328398","8":"0.534382919834601","9":"0.525676937441643","10":"0.620048019207683","11":"0.704104141656663","12":"0.695051353874883","13":"0.700982893157263","14":"0.693208950246765","15":"0.700858676804055","16":"0.695848339335734","17":"0.702607709750567","18":"0.690491196478591","19":"0.690668767507003","20":"0.713061891423236","_rn_":"8"},{"1":"1","2":"0.642308590102708","3":"0.637771358543417","4":"0.651960784313726","5":"0.641386554621849","6":"0.637908496732026","7":"0.645442343604108","8":"0.645804154995332","9":"0.629741479925303","10":"0.470798319327731","11":"0.267326097105509","12":"0.231620564892624","13":"0.315181489262372","14":"0.349824929971989","15":"0.34968487394958","16":"0.246125116713352","17":"0.410866013071895","18":"0.593256886087768","19":"0.652360527544351","20":"0.639323646125117","_rn_":"43"},{"1":"1","2":"0.663378684807256","3":"0.669897959183673","4":"0.674419767907163","5":"0.670261437908497","6":"0.659757236227824","7":"0.673462718420701","8":"0.666286514605842","9":"0.677330932372949","10":"0.533636788048553","11":"0.650750300120048","12":"0.679435107376284","13":"0.660164065626251","14":"0.660800987061491","15":"0.618857543017207","16":"0.676630652260904","17":"0.671905428838202","18":"0.666800053354675","19":"0.640032679738562","20":"0.685534213685474","_rn_":"42"},{"1":"1","2":"0.626023742830465","3":"0.616153127917834","4":"0.587474989995998","5":"0.574883286647992","6":"0.593557422969188","7":"0.603774843270642","8":"0.619954648526077","9":"0.621381886087768","10":"0.61796718687475","11":"0.618247298919568","12":"0.618487394957983","13":"0.599399759903962","14":"0.618954248366013","15":"0.611017740429505","16":"0.598799519807923","17":"0.624569827931172","18":"0.610524209683874","19":"0.604108309990663","20":"0.623489395758303","_rn_":"68"},{"1":"1","2":"0.216998466053088","3":"0.172228891556623","4":"0.21172302254235","5":"0.212575863678805","6":"0.24827847805789","7":"0.257289582499666","8":"0.225826997465653","9":"0.327431806055755","10":"0.483057389622516","11":"0.458758503401361","12":"0.486000233426704","13":"0.541502434307056","14":"0.501396391890089","15":"0.565402827797786","16":"0.576645658263305","17":"0.497266406562625","18":"0.5296893757503","19":"0.619152661064426","20":"0.559197012138189","_rn_":"57"},{"1":"2","2":"0.533623866213152","3":"0.5250070861678","4":"0.545584900626917","5":"0.562263655462185","6":"0.594399009603842","7":"0.595291033079899","8":"0.66203564759237","9":"0.652693577430972","10":"0.668604108309991","11":"0.641544534480459","12":"0.66938025210084","13":"0.670300620248099","14":"0.661332449646525","15":"0.674138822195545","16":"0.619285630919034","17":"0.641329448446045","18":"0.667049319727891","19":"0.66844070961718","20":"0.66312733426704","_rn_":"63"},{"1":"2","2":"0.756062424969988","3":"0.901517273576097","4":"0.757866479925303","5":"0.884126984126984","6":"0.90484193677471","7":"0.928764839269041","8":"0.969627851140456","9":"0.971735360810991","10":"0.949203014539149","11":"0.946168467386955","12":"0.857399626517274","13":"0.729318394024276","14":"0.737768440709617","15":"0.838525410164066","16":"0.900566893424036","17":"0.886754701880752","18":"0.93375350140056","19":"0.9","20":"0.895284780578898","_rn_":"1"},{"1":"2","2":"0.683609693877551","3":"0.661216986794718","4":"0.647604458450047","5":"0.676890756302521","6":"0.676299269707883","7":"0.679832349606509","8":"0.807984860610911","9":"0.867428221288515","10":"0.768694561157796","11":"0.674190926370548","12":"0.761038165266106","13":"0.855906946111778","14":"0.851987044817927","15":"0.830756886087769","16":"0.817824629851941","17":"0.859162831799386","18":"0.88719029278378","19":"0.846308940242764","20":"0.855883186607977","_rn_":"23"},{"1":"2","2":"0.67171368547419","3":"0.684149076297185","4":"0.680675186741363","5":"0.675481442577031","6":"0.673918317326931","7":"0.680517623716153","8":"0.682485077364279","9":"0.667510754301721","10":"0.655356309190343","11":"0.696237244897959","12":"0.683654295051354","13":"0.696170968387355","14":"0.652126267173536","15":"0.661322862478325","16":"0.701973289315726","17":"0.697747849139656","18":"0.694360660931039","19":"0.675093370681606","20":"0.676753618113912","_rn_":"64"},{"1":"2","2":"0.295789148992931","3":"0.309170751633987","4":"0.319559490462852","5":"0.333700980392157","6":"0.333039048952914","7":"0.321058006535948","8":"0.326702764439109","9":"0.33046843737495","10":"0.335951463918901","11":"0.391627901160464","12":"0.429397175536881","13":"0.407275826997466","14":"0.389360327464319","15":"0.372611544617847","16":"0.381319611177804","17":"0.408669301053755","18":"0.450849089635854","19":"0.477707749766573","20":"0.475302204215019","_rn_":"49"},{"1":"3","2":"0.698635287448313","3":"0.699130068694144","4":"0.701866579965319","5":"0.689131069094304","6":"0.70093370681606","7":"0.69890289449113","8":"0.693554921968787","9":"0.680742296918767","10":"0.680755218754168","11":"0.697121765372816","12":"0.715041433239963","13":"0.685388738828865","14":"0.692579531812725","15":"0.69469204348406","16":"0.679173752834467","17":"0.667291499933307","18":"0.679568077230892","19":"0.688567927170868","20":"0.689795501533947","_rn_":"52"},{"1":"3","2":"0.550886604641857","3":"0.538703814859277","4":"0.628506819394424","5":"0.588354925303455","6":"0.608548836201147","7":"0.594561157796452","8":"0.518727490996399","9":"0.29921468587435","10":"0.300559390422836","11":"0.425765306122449","12":"0.696183473389356","13":"0.655290449513138","14":"0.447731592637055","15":"0.519875450180072","16":"0.544456949446445","17":"0.506538031879418","18":"0.534750150060024","19":"0.652051237161531","20":"0.677393874216353","_rn_":"40"},{"1":"3","2":"0.567570361477925","3":"0.617843804188342","4":"0.693203948245965","5":"0.580876517273576","6":"0.588928071228491","7":"0.494882953181272","8":"0.428705648926237","9":"0.665441176470588","10":"0.724953314659197","11":"0.700269274376417","12":"0.715808823529412","13":"0.70874516473256","14":"0.702450980392157","15":"0.705640589569161","16":"0.708982759770575","17":"0.701495598239296","18":"0.71890589569161","19":"0.714589169000934","20":"0.711020241429905","_rn_":"21"},{"1":"3","2":"0.661356209150327","3":"0.633210784313725","4":"0.6375","5":"0.650204248366013","6":"0.644975490196078","7":"0.646527777777778","8":"0.63672385620915","9":"0.631862745098039","10":"0.612867647058823","11":"0.625653594771242","12":"0.64187091503268","13":"0.633823529411765","14":"0.646527777777778","15":"0.651838235294118","16":"0.633169934640523","17":"0.647589869281046","18":"0.603880718954248","19":"0.569566993464052","20":"0.507720588235294","_rn_":"66"},{"1":"3","2":"0.425583566760037","3":"0.639829265039349","4":"0.551460584233693","5":"0.469724556489262","6":"0.512525010004002","7":"0.466928438041883","8":"0.503736494597839","9":"0.461684673869548","10":"0.438186941443244","11":"0.508038215286114","12":"0.489974323062558","13":"0.635259103641457","14":"0.642780445511538","15":"0.575960384153661","16":"0.435632586367881","17":"0.61266173135921","18":"0.610357476323863","19":"0.626575630252101","20":"0.599783246631986","_rn_":"72"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
+<div id="the-sampling-code-was-done-with-train---df-duplicatedrbindtest-df.-it-is-recommandet-to-continue-the-code-with-train---dfrownamesdf-in-rownamestest" class="section level3">
+<h3>The sampling code was done with <code>train &lt;-  df[-duplicated(rbind(test, df)),]</code>. It is recommandet to continue the code with <code>train &lt;- df[!(rownames(df) %in% rownames(test)),]</code></h3>
 <pre class="r"><code># Set up train and test arrays
 train &lt;- data.matrix(Train)
 train_x &lt;- t(train[, -1])
@@ -1651,121 +1658,121 @@ model &lt;- mx.model.FeedForward.create(symbol = NN_model,       # The network s
                                      #initializer=mx.init.uniform(0.05),
                                      epoch.end.callback = mx.callback.log.train.metric(100))</code></pre>
 <pre><code>## Start training with 1 devices</code></pre>
-<pre><code>## [1] Train-accuracy=0.340909090909091</code></pre>
-<pre><code>## [2] Train-accuracy=0.404166666666667</code></pre>
-<pre><code>## [3] Train-accuracy=0.404166666666667</code></pre>
-<pre><code>## [4] Train-accuracy=0.404166666666667</code></pre>
-<pre><code>## [5] Train-accuracy=0.379166666666667</code></pre>
-<pre><code>## [6] Train-accuracy=0.3125</code></pre>
-<pre><code>## [7] Train-accuracy=0.416666666666667</code></pre>
-<pre><code>## [8] Train-accuracy=0.4</code></pre>
-<pre><code>## [9] Train-accuracy=0.4</code></pre>
-<pre><code>## [10] Train-accuracy=0.3</code></pre>
-<pre><code>## [11] Train-accuracy=0.35</code></pre>
-<pre><code>## [12] Train-accuracy=0.383333333333333</code></pre>
-<pre><code>## [13] Train-accuracy=0.35</code></pre>
-<pre><code>## [14] Train-accuracy=0.295833333333333</code></pre>
-<pre><code>## [15] Train-accuracy=0.404166666666667</code></pre>
-<pre><code>## [16] Train-accuracy=0.325</code></pre>
-<pre><code>## [17] Train-accuracy=0.320833333333333</code></pre>
-<pre><code>## [18] Train-accuracy=0.408333333333333</code></pre>
-<pre><code>## [19] Train-accuracy=0.3375</code></pre>
-<pre><code>## [20] Train-accuracy=0.341666666666667</code></pre>
-<pre><code>## [21] Train-accuracy=0.404166666666667</code></pre>
-<pre><code>## [22] Train-accuracy=0.3375</code></pre>
-<pre><code>## [23] Train-accuracy=0.3625</code></pre>
-<pre><code>## [24] Train-accuracy=0.408333333333333</code></pre>
-<pre><code>## [25] Train-accuracy=0.375</code></pre>
-<pre><code>## [26] Train-accuracy=0.379166666666667</code></pre>
-<pre><code>## [27] Train-accuracy=0.370833333333333</code></pre>
-<pre><code>## [28] Train-accuracy=0.375</code></pre>
-<pre><code>## [29] Train-accuracy=0.375</code></pre>
-<pre><code>## [30] Train-accuracy=0.375</code></pre>
-<pre><code>## [31] Train-accuracy=0.375</code></pre>
-<pre><code>## [32] Train-accuracy=0.375</code></pre>
-<pre><code>## [33] Train-accuracy=0.375</code></pre>
-<pre><code>## [34] Train-accuracy=0.3875</code></pre>
-<pre><code>## [35] Train-accuracy=0.383333333333333</code></pre>
-<pre><code>## [36] Train-accuracy=0.375</code></pre>
-<pre><code>## [37] Train-accuracy=0.379166666666667</code></pre>
-<pre><code>## [38] Train-accuracy=0.379166666666667</code></pre>
-<pre><code>## [39] Train-accuracy=0.370833333333333</code></pre>
-<pre><code>## [40] Train-accuracy=0.3875</code></pre>
-<pre><code>## [41] Train-accuracy=0.404166666666667</code></pre>
-<pre><code>## [42] Train-accuracy=0.4375</code></pre>
-<pre><code>## [43] Train-accuracy=0.445833333333333</code></pre>
-<pre><code>## [44] Train-accuracy=0.483333333333333</code></pre>
-<pre><code>## [45] Train-accuracy=0.491666666666667</code></pre>
-<pre><code>## [46] Train-accuracy=0.533333333333333</code></pre>
-<pre><code>## [47] Train-accuracy=0.520833333333333</code></pre>
-<pre><code>## [48] Train-accuracy=0.520833333333333</code></pre>
-<pre><code>## [49] Train-accuracy=0.5</code></pre>
-<pre><code>## [50] Train-accuracy=0.5125</code></pre>
-<pre><code>## [51] Train-accuracy=0.554166666666667</code></pre>
-<pre><code>## [52] Train-accuracy=0.566666666666667</code></pre>
-<pre><code>## [53] Train-accuracy=0.5625</code></pre>
-<pre><code>## [54] Train-accuracy=0.566666666666667</code></pre>
-<pre><code>## [55] Train-accuracy=0.6</code></pre>
-<pre><code>## [56] Train-accuracy=0.6625</code></pre>
-<pre><code>## [57] Train-accuracy=0.633333333333333</code></pre>
-<pre><code>## [58] Train-accuracy=0.666666666666667</code></pre>
-<pre><code>## [59] Train-accuracy=0.691666666666666</code></pre>
-<pre><code>## [60] Train-accuracy=0.7125</code></pre>
-<pre><code>## [61] Train-accuracy=0.691666666666667</code></pre>
-<pre><code>## [62] Train-accuracy=0.695833333333333</code></pre>
-<pre><code>## [63] Train-accuracy=0.720833333333333</code></pre>
-<pre><code>## [64] Train-accuracy=0.708333333333333</code></pre>
-<pre><code>## [65] Train-accuracy=0.733333333333333</code></pre>
-<pre><code>## [66] Train-accuracy=0.733333333333333</code></pre>
-<pre><code>## [67] Train-accuracy=0.725</code></pre>
+<pre><code>## [1] Train-accuracy=0.366666673372189</code></pre>
+<pre><code>## [2] Train-accuracy=0.408333341280619</code></pre>
+<pre><code>## [3] Train-accuracy=0.408333341280619</code></pre>
+<pre><code>## [4] Train-accuracy=0.35416667163372</code></pre>
+<pre><code>## [5] Train-accuracy=0.329166673123837</code></pre>
+<pre><code>## [6] Train-accuracy=0.41250000645717</code></pre>
+<pre><code>## [7] Train-accuracy=0.375000006208817</code></pre>
+<pre><code>## [8] Train-accuracy=0.262500004842877</code></pre>
+<pre><code>## [9] Train-accuracy=0.358333339293798</code></pre>
+<pre><code>## [10] Train-accuracy=0.333333340783914</code></pre>
+<pre><code>## [11] Train-accuracy=0.316666672627131</code></pre>
+<pre><code>## [12] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [13] Train-accuracy=0.287500004594525</code></pre>
+<pre><code>## [14] Train-accuracy=0.408333341280619</code></pre>
+<pre><code>## [15] Train-accuracy=0.395833340783914</code></pre>
+<pre><code>## [16] Train-accuracy=0.325000004221996</code></pre>
+<pre><code>## [17] Train-accuracy=0.408333338797092</code></pre>
+<pre><code>## [18] Train-accuracy=0.395833338300387</code></pre>
+<pre><code>## [19] Train-accuracy=0.391666673123837</code></pre>
+<pre><code>## [20] Train-accuracy=0.395833340783914</code></pre>
+<pre><code>## [21] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [22] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [23] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [24] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [25] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [26] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [27] Train-accuracy=0.39166667064031</code></pre>
+<pre><code>## [28] Train-accuracy=0.395833338300387</code></pre>
+<pre><code>## [29] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [30] Train-accuracy=0.387500002980232</code></pre>
+<pre><code>## [31] Train-accuracy=0.375000002483527</code></pre>
+<pre><code>## [32] Train-accuracy=0.379166670143604</code></pre>
+<pre><code>## [33] Train-accuracy=0.387500002980232</code></pre>
+<pre><code>## [34] Train-accuracy=0.387500002980232</code></pre>
+<pre><code>## [35] Train-accuracy=0.387500002980232</code></pre>
+<pre><code>## [36] Train-accuracy=0.379166670143604</code></pre>
+<pre><code>## [37] Train-accuracy=0.370833337306976</code></pre>
+<pre><code>## [38] Train-accuracy=0.370833334823449</code></pre>
+<pre><code>## [39] Train-accuracy=0.387500005463759</code></pre>
+<pre><code>## [40] Train-accuracy=0.383333340287209</code></pre>
+<pre><code>## [41] Train-accuracy=0.408333336313566</code></pre>
+<pre><code>## [42] Train-accuracy=0.400000003476938</code></pre>
+<pre><code>## [43] Train-accuracy=0.433333339790503</code></pre>
+<pre><code>## [44] Train-accuracy=0.487500004470348</code></pre>
+<pre><code>## [45] Train-accuracy=0.550000006953875</code></pre>
+<pre><code>## [46] Train-accuracy=0.516666665673256</code></pre>
+<pre><code>## [47] Train-accuracy=0.550000006953875</code></pre>
+<pre><code>## [48] Train-accuracy=0.545833339293798</code></pre>
+<pre><code>## [49] Train-accuracy=0.570833340287209</code></pre>
+<pre><code>## [50] Train-accuracy=0.549999992052714</code></pre>
+<pre><code>## [51] Train-accuracy=0.620833337306976</code></pre>
+<pre><code>## [52] Train-accuracy=0.620833332339923</code></pre>
+<pre><code>## [53] Train-accuracy=0.641666655739148</code></pre>
+<pre><code>## [54] Train-accuracy=0.675000001986822</code></pre>
+<pre><code>## [55] Train-accuracy=0.712500000993411</code></pre>
+<pre><code>## [56] Train-accuracy=0.704166668156783</code></pre>
+<pre><code>## [57] Train-accuracy=0.720833336313566</code></pre>
+<pre><code>## [58] Train-accuracy=0.750000004967054</code></pre>
+<pre><code>## [59] Train-accuracy=0.737500006953875</code></pre>
+<pre><code>## [60] Train-accuracy=0.75</code></pre>
+<pre><code>## [61] Train-accuracy=0.762499998013178</code></pre>
+<pre><code>## [62] Train-accuracy=0.72916667163372</code></pre>
+<pre><code>## [63] Train-accuracy=0.716666673620542</code></pre>
+<pre><code>## [64] Train-accuracy=0.662499999006589</code></pre>
+<pre><code>## [65] Train-accuracy=0.562500002483527</code></pre>
+<pre><code>## [66] Train-accuracy=0.662500001490116</code></pre>
+<pre><code>## [67] Train-accuracy=0.75</code></pre>
 <pre><code>## [68] Train-accuracy=0.729166666666667</code></pre>
-<pre><code>## [69] Train-accuracy=0.741666666666667</code></pre>
-<pre><code>## [70] Train-accuracy=0.75</code></pre>
-<pre><code>## [71] Train-accuracy=0.75</code></pre>
-<pre><code>## [72] Train-accuracy=0.758333333333333</code></pre>
-<pre><code>## [73] Train-accuracy=0.783333333333333</code></pre>
-<pre><code>## [74] Train-accuracy=0.8</code></pre>
-<pre><code>## [75] Train-accuracy=0.804166666666667</code></pre>
-<pre><code>## [76] Train-accuracy=0.791666666666667</code></pre>
-<pre><code>## [77] Train-accuracy=0.820833333333333</code></pre>
-<pre><code>## [78] Train-accuracy=0.808333333333333</code></pre>
-<pre><code>## [79] Train-accuracy=0.845833333333333</code></pre>
-<pre><code>## [80] Train-accuracy=0.854166666666667</code></pre>
-<pre><code>## [81] Train-accuracy=0.820833333333333</code></pre>
-<pre><code>## [82] Train-accuracy=0.891666666666667</code></pre>
-<pre><code>## [83] Train-accuracy=0.8375</code></pre>
-<pre><code>## [84] Train-accuracy=0.908333333333333</code></pre>
-<pre><code>## [85] Train-accuracy=0.85</code></pre>
-<pre><code>## [86] Train-accuracy=0.875</code></pre>
-<pre><code>## [87] Train-accuracy=0.920833333333333</code></pre>
-<pre><code>## [88] Train-accuracy=0.8375</code></pre>
-<pre><code>## [89] Train-accuracy=0.729166666666667</code></pre>
-<pre><code>## [90] Train-accuracy=0.745833333333333</code></pre>
-<pre><code>## [91] Train-accuracy=0.804166666666667</code></pre>
-<pre><code>## [92] Train-accuracy=0.854166666666667</code></pre>
-<pre><code>## [93] Train-accuracy=0.9</code></pre>
-<pre><code>## [94] Train-accuracy=0.870833333333333</code></pre>
-<pre><code>## [95] Train-accuracy=0.816666666666667</code></pre>
-<pre><code>## [96] Train-accuracy=0.916666666666667</code></pre>
-<pre><code>## [97] Train-accuracy=0.941666666666667</code></pre>
-<pre><code>## [98] Train-accuracy=0.9125</code></pre>
-<pre><code>## [99] Train-accuracy=0.8875</code></pre>
-<pre><code>## [100] Train-accuracy=0.9125</code></pre>
-<pre><code>## [101] Train-accuracy=0.920833333333333</code></pre>
-<pre><code>## [102] Train-accuracy=0.954166666666667</code></pre>
-<pre><code>## [103] Train-accuracy=0.966666666666667</code></pre>
-<pre><code>## [104] Train-accuracy=0.941666666666667</code></pre>
-<pre><code>## [105] Train-accuracy=0.929166666666667</code></pre>
-<pre><code>## [106] Train-accuracy=0.970833333333333</code></pre>
-<pre><code>## [107] Train-accuracy=0.933333333333333</code></pre>
-<pre><code>## [108] Train-accuracy=0.9375</code></pre>
-<pre><code>## [109] Train-accuracy=0.945833333333333</code></pre>
-<pre><code>## [110] Train-accuracy=0.941666666666667</code></pre>
-<pre><code>## [111] Train-accuracy=0.9875</code></pre>
-<pre><code>## [112] Train-accuracy=0.975</code></pre>
-<pre><code>## [113] Train-accuracy=0.979166666666667</code></pre>
-<pre><code>## [114] Train-accuracy=0.995833333333333</code></pre>
-<pre><code>## [115] Train-accuracy=0.995833333333333</code></pre>
+<pre><code>## [69] Train-accuracy=0.745833337306976</code></pre>
+<pre><code>## [70] Train-accuracy=0.745833337306976</code></pre>
+<pre><code>## [71] Train-accuracy=0.791666666666667</code></pre>
+<pre><code>## [72] Train-accuracy=0.79166667163372</code></pre>
+<pre><code>## [73] Train-accuracy=0.812500009934107</code></pre>
+<pre><code>## [74] Train-accuracy=0.841666663686434</code></pre>
+<pre><code>## [75] Train-accuracy=0.862499992052714</code></pre>
+<pre><code>## [76] Train-accuracy=0.854166666666667</code></pre>
+<pre><code>## [77] Train-accuracy=0.849999994039536</code></pre>
+<pre><code>## [78] Train-accuracy=0.866666664679845</code></pre>
+<pre><code>## [79] Train-accuracy=0.895833333333333</code></pre>
+<pre><code>## [80] Train-accuracy=0.862500001986822</code></pre>
+<pre><code>## [81] Train-accuracy=0.866666664679845</code></pre>
+<pre><code>## [82] Train-accuracy=0.904166658719381</code></pre>
+<pre><code>## [83] Train-accuracy=0.904166658719381</code></pre>
+<pre><code>## [84] Train-accuracy=0.841666663686434</code></pre>
+<pre><code>## [85] Train-accuracy=0.866666664679845</code></pre>
+<pre><code>## [86] Train-accuracy=0.820833335320155</code></pre>
+<pre><code>## [87] Train-accuracy=0.874999995032946</code></pre>
+<pre><code>## [88] Train-accuracy=0.899999991059303</code></pre>
+<pre><code>## [89] Train-accuracy=0.925000001986822</code></pre>
+<pre><code>## [90] Train-accuracy=0.95833332836628</code></pre>
+<pre><code>## [91] Train-accuracy=0.94166665772597</code></pre>
+<pre><code>## [92] Train-accuracy=0.870833327372869</code></pre>
+<pre><code>## [93] Train-accuracy=0.89166667064031</code></pre>
+<pre><code>## [94] Train-accuracy=0.916666661699613</code></pre>
+<pre><code>## [95] Train-accuracy=0.962499991059303</code></pre>
+<pre><code>## [96] Train-accuracy=0.954166660706202</code></pre>
+<pre><code>## [97] Train-accuracy=0.933333327372869</code></pre>
+<pre><code>## [98] Train-accuracy=0.958333323399226</code></pre>
+<pre><code>## [99] Train-accuracy=0.962499996026357</code></pre>
+<pre><code>## [100] Train-accuracy=0.912499999006589</code></pre>
+<pre><code>## [101] Train-accuracy=0.891666655739148</code></pre>
+<pre><code>## [102] Train-accuracy=0.866666659712791</code></pre>
+<pre><code>## [103] Train-accuracy=0.891666665673256</code></pre>
+<pre><code>## [104] Train-accuracy=0.949999993046125</code></pre>
+<pre><code>## [105] Train-accuracy=0.962499996026357</code></pre>
+<pre><code>## [106] Train-accuracy=0.979166661699613</code></pre>
+<pre><code>## [107] Train-accuracy=0.995833332339923</code></pre>
+<pre><code>## [108] Train-accuracy=0.991666664679845</code></pre>
+<pre><code>## [109] Train-accuracy=0.966666663686434</code></pre>
+<pre><code>## [110] Train-accuracy=0.98333332935969</code></pre>
+<pre><code>## [111] Train-accuracy=0.991666664679845</code></pre>
+<pre><code>## [112] Train-accuracy=1</code></pre>
+<pre><code>## [113] Train-accuracy=1</code></pre>
+<pre><code>## [114] Train-accuracy=1</code></pre>
+<pre><code>## [115] Train-accuracy=1</code></pre>
 <pre><code>## [116] Train-accuracy=1</code></pre>
 <pre><code>## [117] Train-accuracy=1</code></pre>
 <pre><code>## [118] Train-accuracy=1</code></pre>
@@ -1823,26 +1830,27 @@ table(test_y, predicted_labels)  </code></pre>
 ##      3 0 0 5</code></pre>
 <pre class="r"><code>predicted[1:8, 1:7]</code></pre>
 <pre><code>##              [,1]         [,2]         [,3]         [,4]         [,5]
-## [1,] 6.182982e-08 2.980041e-06 4.082025e-08 8.634848e-10 1.823233e-08
-## [2,] 9.996058e-01 9.990403e-01 9.999735e-01 9.999961e-01 9.999911e-01
-## [3,] 3.313984e-06 8.182907e-04 2.647635e-05 3.732019e-12 8.889181e-06
-## [4,] 3.867278e-04 2.518923e-05 4.476469e-08 3.888648e-06 3.060580e-09
-## [5,] 6.296697e-08 3.082959e-06 4.201293e-08 8.274218e-10 1.839889e-08
-## [6,] 6.480710e-08 3.270517e-06 4.563314e-08 9.249380e-10 2.002284e-08
-## [7,] 6.700039e-08 3.286246e-06 4.403446e-08 9.470944e-10 1.953333e-08
-## [8,] 6.505603e-08 3.330642e-06 4.707478e-08 8.846938e-10 2.075833e-08
+## [1,] 1.840857e-07 1.043327e-07 2.483293e-08 1.321998e-10 7.084486e-10
+## [2,] 9.982890e-01 9.996439e-01 9.998586e-01 9.999977e-01 1.000000e+00
+## [3,] 3.513488e-04 2.989487e-04 1.398128e-04 5.564680e-12 4.687845e-08
+## [4,] 1.352182e-03 5.273091e-05 1.591530e-06 2.290906e-06 1.160615e-09
+## [5,] 1.856780e-07 1.060495e-07 2.452958e-08 1.375781e-10 6.894709e-10
+## [6,] 1.830753e-07 1.045981e-07 2.570320e-08 1.345270e-10 7.358344e-10
+## [7,] 1.815529e-07 1.025818e-07 2.358473e-08 1.390918e-10 6.840624e-10
+## [8,] 1.825740e-07 1.006227e-07 2.405853e-08 1.265014e-10 6.660885e-10
 ##              [,6]         [,7]
-## [1,] 3.027454e-08 3.308423e-06
-## [2,] 1.250818e-07 4.312157e-03
-## [3,] 9.999989e-01 9.955645e-01
-## [4,] 9.143449e-07 1.136599e-07
-## [5,] 3.007546e-08 3.341728e-06
-## [6,] 3.067742e-08 3.362706e-06
-## [7,] 2.897845e-08 3.251290e-06
-## [8,] 3.136331e-08 3.508613e-06</code></pre>
+## [1,] 9.981917e-08 1.492411e-06
+## [2,] 1.135575e-06 7.383204e-05
+## [3,] 9.999942e-01 9.998740e-01
+## [4,] 4.002962e-07 5.377533e-08
+## [5,] 9.318004e-08 1.412985e-06
+## [6,] 1.016199e-07 1.570883e-06
+## [7,] 9.241506e-08 1.329237e-06
+## [8,] 1.020780e-07 1.466257e-06</code></pre>
 <pre class="r"><code>## get means of identical labels, located in the diagonal
 sum(diag(table(test_y,predicted_labels)))/length(test_y)</code></pre>
 <pre><code>## [1] 1</code></pre>
+</div>
 </div>
 <div id="how-can-plot-image-from-selected-test_y-labelsclasses" class="section level2">
 <h2>how can plot image from selected test_y Labels/classes</h2>
