@@ -190,7 +190,7 @@ Cette méthode ne permet pas de compter les cellules.
 ## Faire des essays avec Pixsets
 
 ```{r}
-im <- load.image("papSmear.jpg")
+im <- imager::load.image("papSmear.jpg")
 im <- grayscale(im)
 px <- im > .6
 par(mfrow=c(1,2))
@@ -272,10 +272,75 @@ px.left(im,5) %>% highlight(col="green")
 ```
 
 
+##split image, convert to dataframe, plot/reconstitute image from dataframe
 
 ```{r}
-#Split pixset in two along x
-imsplit(im,"x",2) %>% plot(layout="row")
+plot(im, axes = FALSE)
+ grid(nx = 4, ny= 4, col = "red", equilogs = FALSE)
+
+ ## function to split image into x/y and arrange them into dataframe. 
+ 
+#Split pixset in four along x
+ #par( mai = c(0, 0, 0.1, 0))
+#imager::imsplit(im,"x",5) %>% plot(layout="row", axes= FALSE)
+# grid(nx = 0, ny= 5, lty= 1, lwd= 2, col = "white", equilogs = FALSE)
+im <- imager::grayscale(im, method = "Luma", drop = TRUE)
+lim <- imager::imsplit(im,"x",4)# %>% plot(layout="row")
+# split le list of  pixsets (4) in four along y 
+# par(mfrow=c(1,4), mai = c(0, 0, 0.1, 0.1))
+# lapply( lim, function(x) {imager::imsplit(x,"y",4) %>% 
+#         plot(layout="col", axes=FALSE)})
+
+
+limg <- lapply( lim, function(x) imager::imsplit(x,"y",4)) 
+
+
+## loop to convert a list of cimg to matrix
+      ## get wide of the first image
+      w <- dim(limg[[1]][[1]][,,,1])[2]
+      ## get height of the first image
+      h <- dim(limg[[1]][[1]][,,,1])[1]
+
+  df <- data.frame(matrix(ncol = (w*h)+1, nrow = 0))
+  # Set names. The first column is the labels, the other columns are the pixels.
+  colnames(df) <-  c("Labels", paste0("pixel", c(1:(w*h) )))
+    for(k in 1:length(limg)){
+
+       for(i in 1:length(limg[[k]])){
+          
+        ## This step is necessary because imsplit output  doesn't give the same size for all image. 
+         
+         im_resize <-   imager::resize(limg[[k]][[i]], w, h)
+         
+        # Coerce to a vector
+         img_vec <- as.vector(im_resize)
+        #img_vec <- as.vector(limg[[k]][[i]][,,,1])
+           
+           vec <- c(paste0(k,i), img_vec)
+           
+           df[nrow(df)+1,] <- vec
+       }
+    }
+  dim(df)
+  
+  ## plot image from a dataframe (a vector)
+  vec2img <- function(df, nrow, w,h){
+   #i <- EBImage::Image(as.numeric(df[nrow,]))
+    i <- imager::as.cimg(as.numeric(df[nrow,]), w, h)
+   #dim(i) <- c(w,h, 1)
+    i <- imager::rotate_xy(i, 20, 50,40)
+  return(plot(i,axes=FALSE))
+  }
+  
+  #vec2img(df[-1],2, w, h)
+
+  ## plot images from datafarme by col
+par(mfcol=c(4,4), mai = c(0, 0, 0.1, 0))
+for(i in 1:nrow(df)){
+  
+  vec2img(df[-1],i, w, h)
+}
+  
 ```
 
 
